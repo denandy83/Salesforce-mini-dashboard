@@ -161,8 +161,21 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
 
     buildColumns() {
         const fieldList = this.columnFields.split(',').map(f => f.trim());
-        const cols = [{ label: 'Case Number', fieldName: 'CaseNumber', type: 'button', style: 'width: 100px; min-width: 100px; max-width: 100px;' }];
+        const cols = [];
         
+        // 1. Always start with Case Number
+        const isCaseNumberSorted = this.sortedBy === 'CaseNumber';
+        cols.push({ 
+            label: 'Case Number', 
+            fieldName: 'CaseNumber', 
+            type: 'button', 
+            style: 'width: 100px; min-width: 100px; max-width: 100px;', 
+            isSortable: true, 
+            showSortIcon: isCaseNumberSorted,
+            headerClass: isCaseNumberSorted ? 'is-sorted' : 'is-sortable'
+        });
+
+        // 2. Process other fields
         fieldList.forEach(f => {
             if (f.toLowerCase() === 'casenumber') return;
             const parts = f.split(':');
@@ -172,8 +185,13 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
             let fieldName = rawField;
             let label = rawField;
             let type = 'text';
+            let isJira = false;
 
-            if (rawField.includes('.')) {
+            if (rawField.toLowerCase() === 'jira') {
+                fieldName = 'Jira';
+                label = 'Jira Tickets';
+                isJira = true;
+            } else if (rawField.includes('.')) {
                 fieldName = rawField.replaceAll('.', DOT_SEP);
                 label = rawField.split('.')[0] + ' ' + rawField.split('.')[1];
             } else if (this.caseInfo?.data?.fields[rawField]) {
@@ -181,14 +199,21 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
                 if (rawField.toLowerCase().includes('date')) type = 'date';
             }
 
+            const isSorted = fieldName === this.sortedBy;
+            let headerClass = '';
+            if (isSorted) headerClass = 'is-sorted';
+            else if (!isJira) headerClass = 'is-sortable';
+
             const style = width ? `width: ${width}px; min-width: ${width}px;` : '';
             cols.push({
                 label: label, 
                 fieldName: fieldName, 
                 type: type,
                 style: style,
-                headerClass: fieldName === this.sortedBy ? 'is-sorted' : '', 
-                showSortIcon: fieldName === this.sortedBy 
+                isJira: isJira,
+                isSortable: !isJira,
+                headerClass: headerClass, 
+                showSortIcon: isSorted 
             });
         });
         this.columns = cols;
@@ -212,7 +237,8 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
             sortField: this.sortedBy.replaceAll(DOT_SEP, '.'), sortOrder: this.sortedDirection,
             searchTerm: this.searchTerm, offset: this.offset, onlyMine: this.currentOnlyMine,
             priorityFilter: this.priorityFilter, limitCount: this.limit,
-            advancedField: this.advancedField, advancedValue: this.advancedValue
+            advancedField: this.advancedField, advancedValue: this.advancedValue,
+            hasJira: this.hasJiraFilter
         })
         .then(data => {
             const flattened = this.flattenData(data).map(c => {
@@ -224,10 +250,10 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
 
                 const cells = this.columns.map(col => {
                     let val = c[col.fieldName];
-                    let jiraLinks = null;
                     if (col.isJira) {
-                        jiraLinks = c[col.fieldName + '_list'] || [];
-                        val = '';
+                        const jiraData = c['Jira_Tickets__r'];
+                        const tickets = Array.isArray(jiraData) ? jiraData : (jiraData ? jiraData.records : null);
+                        val = tickets ? tickets.map(j => j.Name).join(', ') : '';
                     } else if (val && col.fieldName.toLowerCase().includes('date')) {
                         val = this.formatDate(val);
                     }
@@ -236,7 +262,7 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
                         value: val, 
                         isUrl: col.type === 'button', 
                         isJira: col.isJira, 
-                        jiraLinks: jiraLinks 
+                        jiraLinks: [] 
                     };
                 });
                 return { ...c, rowClass: rowClass, cells: cells };
@@ -394,7 +420,8 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
                 sortField: this.sortedBy.replaceAll(DOT_SEP, '.'), 
                 sortOrder: this.sortedDirection,
                 advancedField: this.advancedField, 
-                advancedValue: this.advancedValue
+                advancedValue: this.advancedValue,
+                hasJira: this.hasJiraFilter
             });
             const flattened = this.flattenData(data);
             
@@ -404,7 +431,18 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
             
             flattened.forEach(row => {
                 let line = `${row.CaseNumber},${window.location.origin}/lightning/r/Case/${row.Id}/view`;
-                apiNames.forEach(f => { let k = f.includes('.') ? f.replaceAll('.', DOT_SEP) : f; line += ',"'+ String(row[k] || '').replace(/"/g, '""') + '"'; });
+                selectedFields.forEach(f => { 
+                    let val = '';
+                    if (f.apiName.toLowerCase() === 'jira') {
+                        const jiraData = row['Jira_Tickets__r'];
+                        const tickets = Array.isArray(jiraData) ? jiraData : (jiraData ? jiraData.records : null);
+                        val = tickets ? tickets.map(j => j.Name).join(', ') : '';
+                    } else {
+                        let k = f.apiName.includes('.') ? f.apiName.replaceAll('.', DOT_SEP) : f.apiName; 
+                        val = row[k] || '';
+                    }
+                    line += ',"'+ String(val).replace(/"/g, '""') + '"'; 
+                });
                 csv += line + '\n';
             });
             const link = document.createElement('a'); link.href = 'data:text/csv;base64,' + window.btoa(unescape(encodeURIComponent(csv)));

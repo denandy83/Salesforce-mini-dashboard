@@ -75,7 +75,9 @@
                                     <th key={col.fieldName} class={col.headerClass} scope="col" onclick={handleSort} data-id={col.fieldName} style={col.style}>
                                         <div class="slds-grid slds-grid_vertical-align-center">
                                             <span class="slds-truncate" title={col.label}>{col.label}</span>
-                                            <lightning-icon icon-name={sortIcon} size="xx-small" class="slds-m-left_xx-small" if:true={col.showSortIcon}></lightning-icon>
+                                            <template lwc:if={col.showSortIcon}>
+                                                <lightning-icon icon-name={sortIcon} size="xx-small" class="slds-m-left_xx-small slds-shrink-none"></lightning-icon>
+                                            </template>
                                         </div>
                                     </th>
                                 </template>

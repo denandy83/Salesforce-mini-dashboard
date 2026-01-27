@@ -75,20 +75,32 @@ public with sharing class MiniDashboardController {
     }
 
     @AuraEnabled
-    public static List<Case> getCaseList(String dashboardId, Id accountId, List<String> fields, String sortField, String sortOrder, String searchTerm, Integer offset, String advancedField, String advancedValue, Boolean onlyMine, Integer limitCount, String priorityFilter) {
+    public static List<Case> getCaseList(String dashboardId, Id accountId, List<String> fields, String sortField, String sortOrder, String searchTerm, Integer offset, String advancedField, String advancedValue, Boolean onlyMine, Integer limitCount, String priorityFilter, Boolean hasJira) {
         List<String> statuses = statusMap.get(dashboardId);
         if (statuses == null) return new List<Case>();
 
         Set<String> fieldSet = new Set<String>{'Id', 'CaseNumber'};
+        Boolean includeJira = false;
         if (fields != null) {
             for (String f : fields) { 
                 if (String.isNotBlank(f)) {
-                    fieldSet.add(f.trim().replaceAll('[^a-zA-Z0-9._]', '')); 
+                    String rawF = f.trim().split(':')[0].trim();
+                    String cleanF = rawF.replaceAll('[^a-zA-Z0-9._]', '');
+                    if (cleanF.equalsIgnoreCase('Jira')) {
+                        includeJira = true;
+                    } else {
+                        fieldSet.add(cleanF); 
+                    }
                 }
             }
         }
         
-        String fieldString = String.join(new List<String>(fieldSet), ', ');
+        List<String> fieldList = new List<String>(fieldSet);
+        if (includeJira) {
+            fieldList.add('(SELECT Name FROM Jira_Tickets__r)');
+        }
+        
+        String fieldString = String.join(fieldList, ', ');
         String query = 'SELECT ' + fieldString + ' FROM Case WHERE Status IN :statuses';
         
         if (accountId != null) query += ' AND AccountId = :accountId';
@@ -99,6 +111,10 @@ public with sharing class MiniDashboardController {
 
         if (String.isNotBlank(priorityFilter)) {
             query += ' AND Priority = :priorityFilter';
+        }
+
+        if (hasJira == true) {
+            query += ' AND Id IN (SELECT AVB_Case__c FROM AVB_Jira_Ticket__c)';
         }
 
         if (String.isNotBlank(advancedField) && String.isNotBlank(advancedValue)) {
