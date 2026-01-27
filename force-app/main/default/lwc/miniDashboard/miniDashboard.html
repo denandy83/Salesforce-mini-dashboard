@@ -50,22 +50,19 @@
         <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open slds-modal_large" onclick={closeModal}>
             <div class="slds-modal_container" onclick={handleStopPropagation}>
                 <header class="slds-modal_header">
-                    <button class="slds-button slds-button_icon slds-modal_close slds-button_icon-inverse" title="Close" onclick={closeModal}>
-                        <lightning-icon icon-name="utility:close" alternative-text="close" variant="inverse" size="small"></lightning-icon>
-                    </button>
                     <h2 class="slds-modal_title slds-hyphenate">{modalTitle}</h2>
                     <div class="slds-grid slds-grid_vertical slds-m-top_small">
-                        <div class="slds-col slds-size_1-of-1 slds-m-bottom_x-small">
+                        <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
                             <lightning-input type="search" placeholder="Filter cases..." onchange={handleSearch} variant="label-hidden" is-loading={isSearching}></lightning-input>
                         </div>
-                        <div class="slds-col slds-text-align_left">
+                        <div class="slds-col slds-text-align_left slds-m-bottom_small">
                             <lightning-button-group>
                                 <lightning-button label="Urgent" value="Urgent" variant={priorityFilterUrgent} onclick={handlePriorityQuickFilter}></lightning-button>
                                 <lightning-button label="High" value="High" variant={priorityFilterHigh} onclick={handlePriorityQuickFilter}></lightning-button>
                                 <lightning-button label="Normal" value="Normal" variant={priorityFilterNormal} onclick={handlePriorityQuickFilter}></lightning-button>
                                 <lightning-button label="Low" value="Low" variant={priorityFilterLow} onclick={handlePriorityQuickFilter}></lightning-button>
-                                <lightning-button label="Has Jira" variant={hasJiraBtnVariant} onclick={handleHasJiraToggle} class="slds-m-left_small"></lightning-button>
                             </lightning-button-group>
+                            <lightning-button label="Has Jira" variant={hasJiraBtnVariant} onclick={handleHasJiraToggle} class="slds-m-left_small"></lightning-button>
                         </div>
                     </div>
                 </header>
@@ -130,12 +127,15 @@
 
     <!-- Export Modal -->
     <template lwc:if={isExportModalOpen}>
-        <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open slds-modal_small">
-            <div class="slds-modal_container modal-content-area">
+        <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open slds-modal_small" style="z-index: 9003; padding-top: 50px;">
+            <div class="slds-modal_container" style="background: white; border-radius: 4px;">
                 <header class="slds-modal_header">
                     <h2 class="slds-modal_title">Select Export Columns</h2>
                 </header>
                 <div class="slds-modal_content slds-p-around_medium">
+                    <div class="slds-m-bottom_small slds-border_bottom slds-p-bottom_xx-small">
+                        <lightning-input type="checkbox" label="Select / Deselect All" onchange={handleSelectAll}></lightning-input>
+                    </div>
                     <div class="slds-grid slds-wrap">
                         <template for:each={selectableFields} for:item="f">
                             <div key={f.apiName} class="slds-col slds-size_1-of-2 slds-p-around_xx-small">

@@ -60,6 +60,7 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
     @track sortedDirection = 'desc';
     @track searchTerm = '';
     @track priorityFilter = '';
+    @track hasJiraFilter = false;
     
     isLoadingModal = false;
     isLoadingMore = false;
@@ -307,6 +308,7 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
     }
 
     handlePriorityQuickFilter(event) { this.priorityFilter = this.priorityFilter === event.target.value ? '' : event.target.value; this.offset = 0; this.loadModalData(); }
+    handleHasJiraToggle() { this.hasJiraFilter = !this.hasJiraFilter; this.offset = 0; this.loadModalData(); }
     handleTableScroll(event) {
         console.log('Scroll fired!');
         const target = event.target;
@@ -327,20 +329,76 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
     }
 
     closeModal() { this.isModalOpen = false; }
-    openExportConfig() { this.selectableFields = this.columnFields.split(',').map(f => ({ apiName: f.trim(), label: f.trim(), selected: true })); this.isExportModalOpen = true; }
+    openExportConfig() { 
+        const cols = this.columnFields.split(',').map(f => f.trim().split(':')[0].trim());
+        const extras = this.extraExportFields ? this.extraExportFields.split(',') : [];
+        const allFields = [...this.columnFields.split(','), ...extras].map(f => f.trim()).filter(f => f);
+        
+        // Deduplicate based on API name
+        const uniqueFields = [];
+        const seen = new Set();
+        
+        allFields.forEach(f => {
+            const parts = f.split(':');
+            const apiName = parts[0].trim();
+            
+            if (!seen.has(apiName)) {
+                seen.add(apiName);
+                
+                // Determine if it's a visible column (default selected) or extra (default unchecked)
+                const isVisible = cols.includes(apiName);
+                
+                // Resolve Label
+                let label = apiName;
+                const col = this.columns.find(c => c.fieldName === apiName.replaceAll('.', DOT_SEP));
+                if (col) {
+                    label = col.label;
+                } else if (this.caseInfo && this.caseInfo.data && this.caseInfo.data.fields[apiName]) {
+                    label = this.caseInfo.data.fields[apiName].label;
+                }
+                
+                uniqueFields.push({ apiName: apiName, label: label, selected: isVisible });
+            }
+        });
+
+        this.selectableFields = uniqueFields;
+        this.isExportModalOpen = true; 
+    }
+
+    handleSelectAll(event) {
+        const checked = event.target.checked;
+        this.selectableFields = this.selectableFields.map(f => ({ ...f, selected: checked }));
+    }
     closeExportModal() { this.isExportModalOpen = false; }
     handleFieldToggle(event) { this.selectableFields = this.selectableFields.map(f => f.apiName === event.target.dataset.id ? { ...f, selected: event.target.checked } : f); }
 
     async downloadCSV() {
-        const selected = this.selectableFields.filter(f => f.selected).map(f => f.apiName);
+        const selectedFields = this.selectableFields.filter(f => f.selected);
+        const apiNames = selectedFields.map(f => f.apiName);
         this.closeExportModal();
         try {
-            const data = await getCaseList({ dashboardId: this.currentDashboardId, accountId: this.currentAccountId, fields: selected, limitCount: 1000 });
+            const data = await getCaseList({ 
+                dashboardId: this.currentDashboardId, 
+                accountId: this.currentAccountId, 
+                fields: apiNames, 
+                limitCount: 1000,
+                searchTerm: this.searchTerm,
+                priorityFilter: this.priorityFilter,
+                onlyMine: this.currentOnlyMine,
+                sortField: this.sortedBy.replaceAll(DOT_SEP, '.'), 
+                sortOrder: this.sortedDirection,
+                advancedField: this.advancedField, 
+                advancedValue: this.advancedValue
+            });
             const flattened = this.flattenData(data);
-            let csv = 'Case Number,Link,' + selected.join(',') + '\n';
+            
+            // Build Header Row with Labels
+            const headerLabels = selectedFields.map(f => f.label);
+            let csv = 'Case Number,Link,' + headerLabels.join(',') + '\n';
+            
             flattened.forEach(row => {
                 let line = `${row.CaseNumber},${window.location.origin}/lightning/r/Case/${row.Id}/view`;
-                selected.forEach(f => { let k = f.includes('.') ? f.replaceAll('.', DOT_SEP) : f; line += ',"'+ String(row[k] || '').replace(/"/g, '""') + '"'; });
+                apiNames.forEach(f => { let k = f.includes('.') ? f.replaceAll('.', DOT_SEP) : f; line += ',"'+ String(row[k] || '').replace(/"/g, '""') + '"'; });
                 csv += line + '\n';
             });
             const link = document.createElement('a'); link.href = 'data:text/csv;base64,' + window.btoa(unescape(encodeURIComponent(csv)));
