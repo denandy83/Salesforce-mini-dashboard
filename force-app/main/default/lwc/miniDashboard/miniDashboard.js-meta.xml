@@ -2,28 +2,66 @@
 <LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
     <apiVersion>65.0</apiVersion>
     <isExposed>true</isExposed>
-    <masterLabel>Mini Ticket Dashboard</masterLabel>
-    <description>Displays ticket counts for New, Open, and Waiting statuses with polling and drill-down.</description>
+    <masterLabel>Mini Dashboard</masterLabel>
     <targets>
+        <target>lightning__RecordPage</target>
         <target>lightning__AppPage</target>
         <target>lightning__HomePage</target>
-        <target>lightning__RecordPage</target>
         <target>lightning__UtilityBar</target>
     </targets>
     <targetConfigs>
-        <targetConfig targets="lightning__AppPage,lightning__HomePage,lightning__RecordPage,lightning__UtilityBar">
-            <property name="newThreshold" type="Integer" default="5" label="New Tickets Threshold" description="Color changes if count exceeds this number."/>
-            <property name="openThreshold" type="Integer" default="10" label="Open Tickets Threshold" description="Color changes if count exceeds this number."/>
-            <property name="waitingThreshold" type="Integer" default="5" label="Waiting Tickets Threshold" description="Color changes if count exceeds this number."/>
-            <property name="holdThreshold" type="Integer" default="5" label="On Hold Tickets Threshold" description="Color changes if count exceeds this number."/>
-            <property name="columnFields" type="String" default="Subject, Priority, CreatedDate" label="Drill-down Columns" description="Comma-separated list of Case field API names to show in the modal."/>
-            <property name="extraExportFields" type="String" default="Description, Reason, Origin, Contact.Email" label="Additional Export Fields" description="Comma-separated list of additional fields available for selection in the export popup."/>
-            <property name="defaultSortField" type="String" default="CreatedDate" label="Default Sort Field" description="API Name of the field to sort by initially."/>
-            <property name="defaultSortDirection" type="String" default="desc" label="Default Sort Direction" description="Order to sort (asc or desc)."/>
-            <property name="pollingFrequency" type="Integer" default="60" label="Polling Frequency (seconds)" description="How often the counts should refresh. Minimum 5 seconds."/>
-            
-            <property name="thresholdColor" type="String" default="#ff0000" label="Alert Color" description="Hex code for the alert color (e.g., #ff0000)."/>
-            <property name="normalColor" type="String" default="#000000" label="Normal Color" description="Hex code for the normal color (e.g., #000000)."/>
+        <targetConfig targets="lightning__RecordPage">
+            <objects>
+                <object>Account</object>
+                <object>Contact</object>
+                <object>Case</object>
+            </objects>
+            <property name="newThreshold" type="Integer" label="[All Row] New Threshold" default="5" />
+            <property name="openThreshold" type="Integer" label="[All Row] Open Threshold" default="10" />
+            <property name="waitingThreshold" type="Integer" label="[All Row] Waiting Threshold" default="5" />
+            <property name="holdThreshold" type="Integer" label="[All Row] Hold Threshold" default="5" />
+            <property name="allThreshold" type="Integer" label="[All Row] Total Threshold" default="20" />
+            <property name="myNewThreshold" type="Integer" label="[My Row] New Threshold" default="2" />
+            <property name="myOpenThreshold" type="Integer" label="[My Row] Open Threshold" default="5" />
+            <property name="myWaitingThreshold" type="Integer" label="[My Row] Waiting Threshold" default="2" />
+            <property name="myHoldThreshold" type="Integer" label="[My Row] Hold Threshold" default="2" />
+            <property name="myAllThreshold" type="Integer" label="[My Row] Total Threshold" default="10" />
+            <property name="accountNewThreshold" type="Integer" label="[ICAO Row] New Threshold" default="3" />
+            <property name="accountOpenThreshold" type="Integer" label="[ICAO Row] Open Threshold" default="5" />
+            <property name="accountWaitingThreshold" type="Integer" label="[ICAO Row] Waiting Threshold" default="3" />
+            <property name="accountHoldThreshold" type="Integer" label="[ICAO Row] Hold Threshold" default="3" />
+            <property name="accountAllThreshold" type="Integer" label="[ICAO Row] Total Threshold" default="10" />
+            <property name="columnFields" type="String" label="Drill-down Columns" default="Subject, Priority, CreatedDate" />
+            <property name="extraExportFields" type="String" label="Additional Export Fields" default="" />
+            <property name="defaultSortField" type="String" label="Default Sort Field" default="CreatedDate" />
+            <property name="defaultSortDirection" type="String" label="Default Sort Direction" datasource="asc,desc" default="desc" />
+            <property name="pollingFrequency" type="Integer" label="Polling Frequency (seconds)" default="60" />
+            <property name="thresholdColor" type="String" label="Alert Color (Hex)" default="#ff0000" />
+            <property name="normalColor" type="String" label="Normal Color (Hex)" default="#000000" />
+        </targetConfig>
+        <targetConfig targets="lightning__AppPage,lightning__HomePage,lightning__UtilityBar">
+            <property name="newThreshold" type="Integer" label="[All Row] New Threshold" default="5" />
+            <property name="openThreshold" type="Integer" label="[All Row] Open Threshold" default="10" />
+            <property name="waitingThreshold" type="Integer" label="[All Row] Waiting Threshold" default="5" />
+            <property name="holdThreshold" type="Integer" label="[All Row] Hold Threshold" default="5" />
+            <property name="allThreshold" type="Integer" label="[All Row] Total Threshold" default="20" />
+            <property name="myNewThreshold" type="Integer" label="[My Row] New Threshold" default="2" />
+            <property name="myOpenThreshold" type="Integer" label="[My Row] Open Threshold" default="5" />
+            <property name="myWaitingThreshold" type="Integer" label="[My Row] Waiting Threshold" default="2" />
+            <property name="myHoldThreshold" type="Integer" label="[My Row] Hold Threshold" default="2" />
+            <property name="myAllThreshold" type="Integer" label="[My Row] Total Threshold" default="10" />
+            <property name="accountNewThreshold" type="Integer" label="[ICAO Row] New Threshold" default="3" />
+            <property name="accountOpenThreshold" type="Integer" label="[ICAO Row] Open Threshold" default="5" />
+            <property name="accountWaitingThreshold" type="Integer" label="[ICAO Row] Waiting Threshold" default="3" />
+            <property name="accountHoldThreshold" type="Integer" label="[ICAO Row] Hold Threshold" default="3" />
+            <property name="accountAllThreshold" type="Integer" label="[ICAO Row] Total Threshold" default="10" />
+            <property name="columnFields" type="String" label="Drill-down Columns" default="Subject, Priority, CreatedDate" />
+            <property name="extraExportFields" type="String" label="Additional Export Fields" default="" />
+            <property name="defaultSortField" type="String" label="Default Sort Field" default="CreatedDate" />
+            <property name="defaultSortDirection" type="String" label="Default Sort Direction" datasource="asc,desc" default="desc" />
+            <property name="pollingFrequency" type="Integer" label="Polling Frequency (seconds)" default="60" />
+            <property name="thresholdColor" type="String" label="Alert Color (Hex)" default="#ff0000" />
+            <property name="normalColor" type="String" label="Normal Color (Hex)" default="#000000" />
         </targetConfig>
     </targetConfigs>
 </LightningComponentBundle>
