@@ -127,8 +127,8 @@
 
     <!-- Export Modal -->
     <template lwc:if={isExportModalOpen}>
-        <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open slds-modal_small" style="z-index: 9003; padding-top: 50px;">
-            <div class="slds-modal_container" style="background: white; border-radius: 4px;">
+        <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open slds-modal_small" style="z-index: 9003; padding-top: 50px;" onclick={closeExportModal}>
+            <div class="slds-modal_container" style="background: white; border-radius: 4px;" onclick={handleStopPropagation}>
                 <header class="slds-modal_header">
                     <h2 class="slds-modal_title">Select Export Columns</h2>
                 </header>
@@ -145,9 +145,11 @@
                     </div>
                 </div>
                 <footer class="slds-modal_footer">
-                    <button class="slds-button slds-button_neutral" onclick={closeExportModal}>Cancel</button>
                     <button class="slds-button slds-button_brand" onclick={downloadCSV}>Export to CSV</button>
                 </footer>
+            </div>
+            <div class="modal-bottom-actions" style="margin-top: 1rem;">
+                <p class="footer-text slds-text-body_small" style="color: white;">Click outside the table to close</p>
             </div>
         </section>
         <div class="slds-backdrop slds-backdrop_open" onclick={closeExportModal} style="z-index: 9002;"></div>

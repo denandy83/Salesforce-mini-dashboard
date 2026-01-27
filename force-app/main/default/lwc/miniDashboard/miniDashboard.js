@@ -231,7 +231,13 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
                     } else if (val && col.fieldName.toLowerCase().includes('date')) {
                         val = this.formatDate(val);
                     }
-                    return { key: col.fieldName, value: val, isUrl: col.type === 'button', isJira: col.isJira, jiraLinks: jiraLinks };
+                    return { 
+                        key: col.fieldName, 
+                        value: val, 
+                        isUrl: col.type === 'button', 
+                        isJira: col.isJira, 
+                        jiraLinks: jiraLinks 
+                    };
                 });
                 return { ...c, rowClass: rowClass, cells: cells };
             });
@@ -407,10 +413,17 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
     }
 
     formatDate(dateStr) {
+        if (!dateStr) return '';
         const d = new Date(dateStr);
         if (isNaN(d.getTime())) return dateStr;
-        const pad = (num) => String(num).padStart(2, '0');
-        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+        
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        const hh = String(d.getHours()).padStart(2, '0');
+        const min = String(d.getMinutes()).padStart(2, '0');
+        
+        return `${yyyy}-${mm}-${dd} ${hh}:${min}`;
     }
 
     get sortIcon() { return this.sortedDirection === 'asc' ? 'utility:arrowup' : 'utility:arrowdown'; }
