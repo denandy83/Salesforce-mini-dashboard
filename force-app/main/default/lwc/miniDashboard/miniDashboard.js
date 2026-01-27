@@ -454,11 +454,9 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
                     });
                     csv += line + '\n';
                 });
-                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-                const url = URL.createObjectURL(blob);
                 const link = document.createElement('a');
-                link.href = url;
-                link.setAttribute('download', 'Export.csv');
+                link.href = 'data:text/csv;base64,' + window.btoa(unescape(encodeURIComponent(csv)));
+                link.download = 'Export.csv';
                 link.click();
             } catch (e) { this.handleError('Export Failed', e); }
         }
