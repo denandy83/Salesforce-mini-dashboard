@@ -1,6 +1,6 @@
 <template>
     <div class="dashboard-container slds-p-around_small">
-        <!-- Row 1: ALL -->
+        <!-- Dashboard Rows -->
         <div class="dashboard-row">
             <div class="row-label">All</div>
             <div class="status-grid">
@@ -13,8 +13,6 @@
                 </template>
             </div>
         </div>
-
-        <!-- Row 2: MY -->
         <div class="dashboard-row">
             <div class="row-label">My</div>
             <div class="status-grid">
@@ -27,8 +25,6 @@
                 </template>
             </div>
         </div>
-
-        <!-- Row 3: ACCOUNT -->
         <template lwc:if={showAccountRow}>
             <div class="dashboard-row">
                 <div class="row-label">{accountRowLabel}</div>
@@ -66,7 +62,6 @@
                         </div>
                     </div>
                 </header>
-
                 <div class="slds-modal_content slds-p-around_none modal-content-area" onscroll={handleTableScroll}>
                     <table class="slds-table slds-table_bordered slds-table_fixed-layout">
                         <thead>
@@ -91,9 +86,7 @@
                                             <template lwc:if={cell.isUrl}>
                                                 <button class="slds-button slds-button_reset slds-text-link" onclick={viewCase} data-id={row.Id}>{cell.value}</button>
                                             </template>
-                                            <template lwc:else>
-                                                {cell.value}
-                                            </template>
+                                            <template lwc:else>{cell.value}</template>
                                         </td>
                                     </template>
                                 </tr>
@@ -104,14 +97,10 @@
                         <lightning-spinner alternative-text="Loading" size="medium"></lightning-spinner>
                     </template>
                     <template lwc:if={isLoadingMore}>
-                        <div class="slds-p-around_small slds-text-align_center slds-text-color_weak">
-                            Loading more...
-                        </div>
+                        <div class="slds-p-around_small slds-text-align_center slds-text-color_weak">Loading more...</div>
                     </template>
                 </div>
             </div>
-
-            <!-- Positioned outside the container so they float on the backdrop -->
             <div class="modal-bottom-actions">
                 <p class="footer-text slds-text-body_small">Click outside the table to close</p>
                 <lightning-button label="Export to CSV" icon-name="utility:download" variant="brand" onclick={openExportConfig}></lightning-button>

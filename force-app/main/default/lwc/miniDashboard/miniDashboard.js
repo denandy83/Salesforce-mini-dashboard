@@ -78,6 +78,7 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
     currentDashboardId;
     currentAccountId;
     currentOnlyMine = false;
+    isFirstModalLoad = false;
 
     // Advanced search properties
     searchTimeout;
@@ -115,7 +116,17 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
 
     connectedCallback() {
         this.startPolling();
-        if (onTabFocused) { onTabFocused((event) => { if (event.tabId === this.enclosingTabId?.data) { this.fetchData(); this.startPolling(); } else { this.stopPolling(); } }); }
+        if (onTabFocused) { 
+            onTabFocused((event) => { 
+                const currentTabId = this.enclosingTabId?.data;
+                if (!currentTabId || event.tabId === currentTabId) { 
+                    this.fetchData(); 
+                    this.startPolling(); 
+                } else { 
+                    this.stopPolling(); 
+                } 
+            }); 
+        }
     }
 
     startPolling() { this.stopPolling(); this.pollingInterval = setInterval(() => { this.fetchData(); }, (this.pollingFrequency || 60) * 1000); }
@@ -155,79 +166,40 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
         this.currentDashboardId = event.currentTarget.dataset.id;
         this.currentAccountId = event.currentTarget.dataset.scope === 'account' ? this.accountId : null;
         this.currentOnlyMine = event.currentTarget.dataset.scope === 'my';
-        this.modalData = []; this.offset = 0; this.isModalOpen = true;
+        this.modalData = []; this.offset = 0; this.isModalOpen = true; this.isFirstModalLoad = true;
         this.buildColumns(); this.loadModalData();
     }
 
     buildColumns() {
         const fieldList = this.columnFields.split(',').map(f => f.trim());
         const cols = [];
-        
-        // 1. Always start with Case Number
         const isCaseNumberSorted = this.sortedBy === 'CaseNumber';
         cols.push({
-            label: 'Case Number', 
-            fieldName: 'CaseNumber', 
-            type: 'button', 
-            style: 'width: 100px; min-width: 100px; max-width: 100px;', 
-            isSortable: true, 
-            showSortIcon: isCaseNumberSorted,
-            headerClass: isCaseNumberSorted ? 'is-sorted' : 'is-sortable'
+            label: 'Case Number', fieldName: 'CaseNumber', type: 'button', style: 'width: 100px; min-width: 100px; max-width: 100px;', 
+            isSortable: true, showSortIcon: isCaseNumberSorted, headerClass: isCaseNumberSorted ? 'is-sorted' : 'is-sortable'
         });
-
-        // 2. Process other fields
         fieldList.forEach(f => {
             if (f.toLowerCase() === 'casenumber') return;
             const parts = f.split(':');
             const rawField = parts[0].trim();
             const width = parts.length > 1 ? parts[1].trim() : null;
-
-            let fieldName = rawField;
-            let label = rawField;
-            let type = 'text';
-            let isJira = false;
-
-            if (rawField.toLowerCase() === 'jira') {
-                fieldName = 'Jira';
-                label = 'Jira Tickets';
-                isJira = true;
-            } else if (rawField.includes('.')) {
-                fieldName = rawField.replaceAll('.', DOT_SEP);
-                label = rawField.split('.')[0] + ' ' + rawField.split('.')[1];
-            } else if (this.caseInfo?.data?.fields[rawField]) {
-                label = this.caseInfo.data.fields[rawField].label;
-                if (rawField.toLowerCase().includes('date')) type = 'date';
-            }
-
+            let fieldName = rawField; let label = rawField; let type = 'text'; let isJira = false;
+            if (rawField.toLowerCase() === 'jira') { fieldName = 'Jira'; label = 'Jira Tickets'; isJira = true; } 
+            else if (rawField.includes('.')) { fieldName = rawField.replaceAll('.', DOT_SEP); label = rawField.split('.')[0] + ' ' + rawField.split('.')[1]; } 
+            else if (this.caseInfo?.data?.fields[rawField]) { label = this.caseInfo.data.fields[rawField].label; if (rawField.toLowerCase().includes('date')) type = 'date'; }
             const isSorted = fieldName === this.sortedBy;
-            let headerClass = '';
-            if (isSorted) headerClass = 'is-sorted';
-            else if (!isJira) headerClass = 'is-sortable';
-
+            let headerClass = isSorted ? 'is-sorted' : (isJira ? '' : 'is-sortable');
             const style = width ? `width: ${width}px; min-width: ${width}px;` : '';
-            cols.push({
-                label: label, 
-                fieldName: fieldName, 
-                type: type,
-                style: style,
-                isJira: isJira,
-                isSortable: !isJira,
-                headerClass: headerClass, 
-                showSortIcon: isSorted 
-            });
+            cols.push({ label: label, fieldName: fieldName, type: type, style: style, isJira: isJira, isSortable: !isJira, headerClass: headerClass, showSortIcon: isSorted });
         });
         this.columns = cols;
     }
 
     loadModalData() {
         const cleanFields = this.columnFields.split(',').map(f => f.trim().split(':')[0].trim());
-        
         if (this.offset === 0) {
-            if (this.modalData.length === 0) {
-                this.isLoadingModal = true;
-            } else {
-                this.isSearching = true;
-            }
+            if (this.isFirstModalLoad) { this.isLoadingModal = true; this.isFirstModalLoad = false; } 
+            else { this.isSearching = true; }
         } else {
             this.isLoadingMore = true;
         }
@@ -249,34 +221,25 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
                 else if (c.Priority === 'Low') rowClass += ' priority-low';
 
                 const cells = this.columns.map(col => {
-                    let val = c[col.fieldName];
-                    if (col.isJira) {
+                    const recordValue = c[col.fieldName];
+                    let displayValue = recordValue;
+                    const isJira = !!col.isJira;
+                    if (isJira) {
                         const jiraData = c['Jira_Tickets__r'];
                         const tickets = Array.isArray(jiraData) ? jiraData : (jiraData ? jiraData.records : null);
-                        val = tickets ? tickets.map(j => j.Name).join(', ') : '';
-                    } else if (val && col.fieldName.toLowerCase().includes('date')) {
-                        val = this.formatDate(val);
+                        displayValue = tickets ? tickets.map(j => j.Name).join(', ') : '';
+                    } else if (displayValue && col.fieldName.toLowerCase().includes('date')) {
+                        displayValue = this.formatDate(displayValue);
                     }
-                    return { 
-                        key: col.fieldName, 
-                        value: val, 
-                        isUrl: col.type === 'button', 
-                        isJira: col.isJira
-                    };
+                    return { key: col.fieldName, value: displayValue, isUrl: col.type === 'button', isJira: isJira };
                 });
                 return { ...c, rowClass: rowClass, cells: cells };
             });
             this.modalData = this.offset === 0 ? flattened : [...this.modalData, ...flattened];
             this.isMoreDataAvailable = data.length === this.limit;
         })
-        .catch(error => {
-            this.handleError('Error loading cases', error);
-        })
-        .finally(() => { 
-            this.isLoadingModal = false; 
-            this.isLoadingMore = false; 
-            this.isSearching = false;
-        });
+        .catch(error => this.handleError('Error loading cases', error))
+        .finally(() => { this.isLoadingModal = false; this.isLoadingMore = false; this.isSearching = false; });
     }
 
     flattenData(data) {
@@ -294,7 +257,6 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
         const field = event.currentTarget.dataset.id;
         const col = this.columns.find(c => c.fieldName === field);
         if (col && col.isSortable === false) return;
-
         if (this.sortedBy === field) this.sortedDirection = this.sortedDirection === 'asc' ? 'desc' : 'asc';
         else { this.sortedBy = field; this.sortedDirection = 'asc'; }
         this.offset = 0; this.buildColumns(); this.loadModalData();
@@ -303,45 +265,20 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
     handleSearch(event) {
         const val = event.target.value;
         if (this.searchTimeout) clearTimeout(this.searchTimeout);
-
         this.searchTimeout = setTimeout(() => {
-            this.offset = 0;
-            this.advancedField = '';
-            this.advancedValue = '';
-            this.searchTerm = '';
-
+            this.offset = 0; this.advancedField = ''; this.advancedValue = ''; this.searchTerm = '';
             if (val.includes(':')) {
                 const firstColon = val.indexOf(':');
                 const key = val.substring(0, firstColon).trim().toLowerCase();
                 let value = val.substring(firstColon + 1).trim();
-                
-                // Support quoted values for colons inside value
-                if (value.startsWith('"') && value.endsWith('"')) {
-                    value = value.substring(1, value.length - 1);
-                }
-                
-                // 1. Check Shortcuts
+                if (value.startsWith('"') && value.endsWith('"')) value = value.substring(1, value.length - 1);
                 let fieldApiName = SEARCH_SHORTCUTS[key];
-
-                // 2. Check Columns
                 if (!fieldApiName) {
-                    const col = this.columns.find(c => 
-                        c.label.toLowerCase() === key || 
-                        c.fieldName.toLowerCase() === key.replaceAll(' ', '.') ||
-                        c.fieldName.toLowerCase() === key.replaceAll(' ', DOT_SEP)
-                    );
+                    const col = this.columns.find(c => c.label.toLowerCase() === key || c.fieldName.toLowerCase() === key.replaceAll(' ', '.') || c.fieldName.toLowerCase() === key.replaceAll(' ', DOT_SEP));
                     if (col) fieldApiName = col.fieldName.replaceAll(DOT_SEP, '.');
                 }
-                
-                if (fieldApiName) {
-                    this.advancedField = fieldApiName;
-                    this.advancedValue = value;
-                } else {
-                    this.searchTerm = val;
-                }
-            } else {
-                this.searchTerm = val;
-            }
+                if (fieldApiName) { this.advancedField = fieldApiName; this.advancedValue = value; } else { this.searchTerm = val; }
+            } else { this.searchTerm = val; }
             this.loadModalData();
         }, 300);
     }
@@ -351,9 +288,8 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
     handleTableScroll(event) {
         const target = event.target;
         const scrollBottom = target.scrollHeight - target.scrollTop - target.clientHeight;
-        if (scrollBottom < 50 && this.isMoreDataAvailable && !this.isLoadingModal && !this.isLoadingMore) {
-            this.offset += this.limit;
-            this.loadModalData();
+        if (scrollBottom < 50 && this.isMoreDataAvailable && !this.isLoadingModal && !this.isLoadingMore && !this.isSearching) {
+            this.offset += this.limit; this.loadModalData();
         }
     }
 
@@ -362,45 +298,27 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
         try { await openTab({ recordId: id, focus: true }); } catch (e) { this[NavigationMixin.Navigate]({ type: 'standard__recordPage', attributes: { recordId: id, actionName: 'view' } }); }
     }
 
-    handleStopPropagation(event) {
-        event.stopPropagation();
-    }
-
+    handleStopPropagation(event) { event.stopPropagation(); }
     closeModal() { this.isModalOpen = false; }
-    openExportConfig() { 
+    
+    openExportConfig() {
         const cols = this.columnFields.split(',').map(f => f.trim().split(':')[0].trim());
         const extras = this.extraExportFields ? this.extraExportFields.split(',') : [];
         const allFields = [...this.columnFields.split(','), ...extras].map(f => f.trim()).filter(f => f);
-        
-        // Deduplicate based on API name
-        const uniqueFields = [];
-        const seen = new Set();
-        
+        const uniqueFields = []; const seen = new Set();
         allFields.forEach(f => {
-            const parts = f.split(':');
-            const apiName = parts[0].trim();
-            
+            const apiName = f.split(':')[0].trim();
             if (!seen.has(apiName)) {
                 seen.add(apiName);
-                
-                // Determine if it's a visible column (default selected) or extra (default unchecked)
                 const isVisible = cols.includes(apiName);
-                
-                // Resolve Label
                 let label = apiName;
                 const col = this.columns.find(c => c.fieldName === apiName.replaceAll('.', DOT_SEP));
-                if (col) {
-                    label = col.label;
-                } else if (this.caseInfo && this.caseInfo.data && this.caseInfo.data.fields[apiName]) {
-                    label = this.caseInfo.data.fields[apiName].label;
-                }
-                
+                if (col) label = col.label;
+                else if (this.caseInfo?.data?.fields[apiName]) label = this.caseInfo.data.fields[apiName].label;
                 uniqueFields.push({ apiName: apiName, label: label, selected: isVisible });
             }
         });
-
-        this.selectableFields = uniqueFields;
-        this.isExportModalOpen = true; 
+        this.selectableFields = uniqueFields; this.isExportModalOpen = true; 
     }
 
     handleSelectAll(event) {
@@ -430,11 +348,8 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
                 hasJira: this.hasJiraFilter
             });
             const flattened = this.flattenData(data);
-            
-            // Build Header Row with Labels
             const headerLabels = selectedFields.map(f => f.label);
             let csv = 'Case Number,Link,' + headerLabels.join(',') + '\n';
-            
             flattened.forEach(row => {
                 let line = `${row.CaseNumber},${window.location.origin}/lightning/r/Case/${row.Id}/view`;
                 selectedFields.forEach(f => { 
@@ -451,8 +366,15 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
                 });
                 csv += line + '\n';
             });
-            const link = document.createElement('a'); link.href = 'data:text/csv;base64,' + window.btoa(unescape(encodeURIComponent(csv)));
-            link.download = 'Export.csv'; link.click();
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', 'Export.csv');
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         } catch (e) { this.handleError('Export Failed', e); }
     }
 
@@ -460,14 +382,8 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
         if (!dateStr) return '';
         const d = new Date(dateStr);
         if (isNaN(d.getTime())) return dateStr;
-        
-        const yyyy = d.getFullYear();
-        const mm = String(d.getMonth() + 1).padStart(2, '0');
-        const dd = String(d.getDate()).padStart(2, '0');
-        const hh = String(d.getHours()).padStart(2, '0');
-        const min = String(d.getMinutes()).padStart(2, '0');
-        
-        return `${yyyy}-${mm}-${dd} ${hh}:${min}`;
+        const pad = (num) => String(num).padStart(2, '0');
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
     }
 
     get sortIcon() { return this.sortedDirection === 'asc' ? 'utility:arrowup' : 'utility:arrowdown'; }
