@@ -35,10 +35,13 @@
 .count-wrapper {
     text-align: center;
     cursor: pointer;
-    padding: 0.5rem;
+    padding: 0 0 0.5rem 0;
     transition: background 0.2s;
     border-radius: 4px;
-    min-width: 80px;
+    flex: 1 1 0px;
+    margin: 0 4px;
+    border: 1px solid #e0e5ee;
+    overflow: hidden;
 }
 
 .count-wrapper:hover {
@@ -65,10 +68,10 @@ tr.priority-normal { background-color: rgba(129, 199, 132, 0.1); }
 tr.priority-low    { background-color: rgba(144, 164, 174, 0.1); }
 
 .count-bar {
-    height: 4px;
-    width: 40px;
-    margin: 0 auto 8px;
-    border-radius: 2px;
+    height: 6px;
+    width: 100%;
+    margin: 0;
+    border-radius: 0;
 }
 
 .count-label {
@@ -76,6 +79,7 @@ tr.priority-low    { background-color: rgba(144, 164, 174, 0.1); }
     font-weight: 800;
     color: #aaa;
     text-transform: uppercase;
+    margin-top: 8px;
     margin-bottom: 2px;
 }
 

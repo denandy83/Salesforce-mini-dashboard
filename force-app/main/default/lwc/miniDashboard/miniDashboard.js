@@ -19,6 +19,14 @@ const FIELDS_MAP = {
 const DEFAULT_COLUMNS = 'Subject, Priority, CreatedDate';
 const DOT_SEP = '__DOT__';
 
+const SEARCH_SHORTCUTS = {
+    'icao account': 'Account.AVB_ICAO_Account__c',
+    'icao': 'Account.AVB_ICAO_Account__c',
+    'account': 'Account.Name',
+    'case number': 'CaseNumber',
+    'case #': 'CaseNumber'
+};
+
 export default class MiniDashboard extends NavigationMixin(LightningElement) {
     @api recordId;
     @api objectApiName;
@@ -55,6 +63,7 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
     
     isLoadingModal = false;
     isLoadingMore = false;
+    isSearching = false;
     isMoreDataAvailable = true;
     offset = 0;
     limit = 50;
@@ -69,12 +78,17 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
     currentAccountId;
     currentOnlyMine = false;
 
+    // Advanced search properties
+    searchTimeout;
+    advancedField = '';
+    advancedValue = '';
+
     initItems() {
         return [
-            { id: 'New', fullLabel: 'New', count: 0, tooltip: '', barColor: '#81C784' },
-            { id: 'Open', fullLabel: 'Open', count: 0, tooltip: '', barColor: '#E57373' },
-            { id: 'Waiting for Customer', fullLabel: 'Waiting', count: 0, tooltip: '', barColor: '#64B5F6' },
-            { id: 'On Hold', fullLabel: 'Hold', count: 0, tooltip: '', barColor: '#90A4AE' }
+            { id: 'New', fullLabel: 'New', count: 0, tooltip: '', barColor: '#81C784', cssClass: 'count-wrapper' },
+            { id: 'Open', fullLabel: 'Open', count: 0, tooltip: '', barColor: '#E57373', cssClass: 'count-wrapper' },
+            { id: 'Waiting for Customer', fullLabel: 'Waiting', count: 0, tooltip: '', barColor: '#64B5F6', cssClass: 'count-wrapper' },
+            { id: 'On Hold', fullLabel: 'Hold', count: 0, tooltip: '', barColor: '#90A4AE', cssClass: 'count-wrapper' }
         ];
     }
 
@@ -167,7 +181,7 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
             }
 
             const style = width ? `width: ${width}px; min-width: ${width}px;` : '';
-            cols.push({ 
+            cols.push({
                 label: label, 
                 fieldName: fieldName, 
                 type: type,
@@ -183,16 +197,21 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
         const cleanFields = this.columnFields.split(',').map(f => f.trim().split(':')[0].trim());
         
         if (this.offset === 0) {
-            this.isLoadingModal = true;
+            if (this.modalData.length === 0) {
+                this.isLoadingModal = true;
+            } else {
+                this.isSearching = true;
+            }
         } else {
             this.isLoadingMore = true;
         }
 
-        getCaseList({ 
+        getCaseList({
             dashboardId: this.currentDashboardId, accountId: this.currentAccountId, fields: cleanFields,
             sortField: this.sortedBy.replaceAll(DOT_SEP, '.'), sortOrder: this.sortedDirection,
             searchTerm: this.searchTerm, offset: this.offset, onlyMine: this.currentOnlyMine,
-            priorityFilter: this.priorityFilter, limitCount: this.limit
+            priorityFilter: this.priorityFilter, limitCount: this.limit,
+            advancedField: this.advancedField, advancedValue: this.advancedValue
         })
         .then(data => {
             const flattened = this.flattenData(data).map(c => {
@@ -224,6 +243,7 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
         .finally(() => { 
             this.isLoadingModal = false; 
             this.isLoadingMore = false; 
+            this.isSearching = false;
         });
     }
 
@@ -245,7 +265,47 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
         this.offset = 0; this.buildColumns(); this.loadModalData();
     }
 
-    handleSearch(event) { this.searchTerm = event.target.value; this.offset = 0; this.loadModalData(); }
+    handleSearch(event) {
+        const val = event.target.value;
+        if (this.searchTimeout) clearTimeout(this.searchTimeout);
+
+        this.searchTimeout = setTimeout(() => {
+            this.offset = 0;
+            this.advancedField = '';
+            this.advancedValue = '';
+            this.searchTerm = '';
+
+            if (val.includes(':')) {
+                const parts = val.split(':');
+                const key = parts[0].trim().toLowerCase();
+                const value = parts[1].trim();
+                
+                // 1. Check Shortcuts
+                let fieldApiName = SEARCH_SHORTCUTS[key];
+
+                // 2. Check Columns
+                if (!fieldApiName) {
+                    const col = this.columns.find(c => 
+                        c.label.toLowerCase() === key || 
+                        c.fieldName.toLowerCase() === key.replaceAll(' ', '.') ||
+                        c.fieldName.toLowerCase() === key.replaceAll(' ', DOT_SEP)
+                    );
+                    if (col) fieldApiName = col.fieldName.replaceAll(DOT_SEP, '.');
+                }
+                
+                if (fieldApiName) {
+                    this.advancedField = fieldApiName;
+                    this.advancedValue = value;
+                } else {
+                    this.searchTerm = val;
+                }
+            } else {
+                this.searchTerm = val;
+            }
+            this.loadModalData();
+        }, 300);
+    }
+
     handlePriorityQuickFilter(event) { this.priorityFilter = this.priorityFilter === event.target.value ? '' : event.target.value; this.offset = 0; this.loadModalData(); }
     handleTableScroll(event) {
         console.log('Scroll fired!');
@@ -256,16 +316,17 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
             this.loadModalData();
         }
     }
-        async viewCase(event) {
-            const id = event.currentTarget.dataset.id;
-            try { await openTab({ recordId: id, focus: true }); } catch (e) { this[NavigationMixin.Navigate]({ type: 'standard__recordPage', attributes: { recordId: id, actionName: 'view' } }); }
-        }
-    
-        handleStopPropagation(event) {
-            event.stopPropagation();
-        }
-    
-        closeModal() { this.isModalOpen = false; }
+
+    async viewCase(event) {
+        const id = event.currentTarget.dataset.id;
+        try { await openTab({ recordId: id, focus: true }); } catch (e) { this[NavigationMixin.Navigate]({ type: 'standard__recordPage', attributes: { recordId: id, actionName: 'view' } }); }
+    }
+
+    handleStopPropagation(event) {
+        event.stopPropagation();
+    }
+
+    closeModal() { this.isModalOpen = false; }
     openExportConfig() { this.selectableFields = this.columnFields.split(',').map(f => ({ apiName: f.trim(), label: f.trim(), selected: true })); this.isExportModalOpen = true; }
     closeExportModal() { this.isExportModalOpen = false; }
     handleFieldToggle(event) { this.selectableFields = this.selectableFields.map(f => f.apiName === event.target.dataset.id ? { ...f, selected: event.target.checked } : f); }

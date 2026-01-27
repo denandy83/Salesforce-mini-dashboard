@@ -1,0 +1,97 @@
+<template>
+    <div class="dashboard-container">
+        <!-- Total Row -->
+        <div class="row">
+            <div class="row-label">All</div>
+            <div class="items-container">
+                <template for:each={totalItems} for:item="item">
+                    <div key={item.id} class="dashboard-item" onclick={handleItemClick} data-id={item.id} data-scope="total" title="Click to view total cases">
+                        <div class="top-bar" style={item.barStyle}></div>
+                        <div class="label">
+                            <template lwc:if={isWide}>{item.fullLabel}</template>
+                            <template lwc:else>{item.label}</template>
+                        </div>
+                        <div class={item.cssClass} style={item.itemStyle}>
+                            {item.count}
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <!-- Account Row -->
+        <template lwc:if={showAccountRow}>
+            <div class="row">
+                <div class="row-label">{accountRowLabel}</div>
+                <div class="items-container">
+                    <template for:each={accountItems} for:item="item">
+                                            <div key={item.id} class="dashboard-item" onclick={handleItemClick} data-id={item.id} data-scope="account" title="Click to view account cases">
+                                                <div class="top-bar" style={item.barStyle}></div>
+                                                <div class="label">
+                                                    <template lwc:if={isWide}>{item.fullLabel}</template>
+                                                    <template lwc:else>{item.label}</template>
+                                                </div>
+                                                <div class={item.cssClass} style={item.itemStyle}>
+                                                    {item.count}
+                                                </div>
+                                            </div>                    </template>
+                </div>
+            </div>
+        </template>
+    </div>
+
+    <!-- Drill-down Modal -->
+    <template lwc:if={isModalOpen}>
+        <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open slds-modal_medium" onclick={closeModal}>
+            <div class="slds-modal_container" onclick={handleStopPropagation}>
+                <header class="slds-modal_header">
+                    <h2 class="slds-modal_title slds-hyphenate">{modalTitle}</h2>
+                </header>
+                <div class="slds-modal_content slds-p-around_medium modal-content-area">
+                    <div class="slds-m-bottom_small">
+                        <lightning-input
+                            type="search"
+                            label="Search Cases"
+                            placeholder="Search table columns... Use 'Label: Value' for specific filters"
+                            onchange={handleSearch}
+                            variant="label-hidden"
+                            value={searchTerm}>
+                        </lightning-input>
+                    </div>
+
+                    <div class="table-container">
+                        <template lwc:if={modalData.length}>
+                            <lightning-datatable
+                                key-field="Id"
+                                data={modalData}
+                                columns={columns}
+                                hide-checkbox-column
+                                sorted-by={sortedBy}
+                                sorted-direction={sortedDirection}
+                                onsort={handleSort}
+                                onrowaction={handleRowAction}
+                                enable-infinite-loading
+                                onloadmore={handleLoadMore}>
+                            </lightning-datatable>
+                        </template>
+                        
+                        <template lwc:if={isLoadingModal}>
+                            <lightning-spinner alternative-text="Loading" size="medium"></lightning-spinner>
+                        </template>
+
+                        <template lwc:if={hasNoModalResults}>
+                            <div class="empty-state">
+                                <lightning-icon icon-name="utility:search" size="medium" class="slds-m-bottom_small"></lightning-icon>
+                                <p>No records found matching your criteria.</p>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+                <footer class="slds-p-top_small slds-text-align_center">
+                    <p class="footer-text slds-text-body_small">Click outside the table to close</p>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open" onclick={closeModal}></div>
+    </template>
+</template>

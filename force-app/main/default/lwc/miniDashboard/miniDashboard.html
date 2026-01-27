@@ -56,7 +56,7 @@
                     <h2 class="slds-modal_title slds-hyphenate">{modalTitle}</h2>
                     <div class="slds-grid slds-grid_vertical slds-m-top_small">
                         <div class="slds-col slds-size_1-of-1 slds-m-bottom_x-small">
-                            <lightning-input type="search" placeholder="Filter cases..." onchange={handleSearch} variant="label-hidden"></lightning-input>
+                            <lightning-input type="search" placeholder="Filter cases..." onchange={handleSearch} variant="label-hidden" is-loading={isSearching}></lightning-input>
                         </div>
                         <div class="slds-col slds-text-align_left">
                             <lightning-button-group>

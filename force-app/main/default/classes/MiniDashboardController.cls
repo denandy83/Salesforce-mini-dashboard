@@ -74,7 +74,7 @@ public with sharing class MiniDashboardController {
         return results;
     }
 
-    @AuraEnabled(cacheable=true)
+    @AuraEnabled
     public static List<Case> getCaseList(String dashboardId, Id accountId, List<String> fields, String sortField, String sortOrder, String searchTerm, Integer offset, String advancedField, String advancedValue, Boolean onlyMine, Integer limitCount, String priorityFilter) {
         List<String> statuses = statusMap.get(dashboardId);
         if (statuses == null) return new List<Case>();
@@ -110,7 +110,7 @@ public with sharing class MiniDashboardController {
             List<String> searchFilters = new List<String>();
             for (String f : fieldSet) {
                 String fieldLower = f.toLowerCase();
-                if (!fieldLower.equals('id') && !fieldLower.contains('date') && !fieldLower.equals('isclosed') && !fieldLower.equals('isdeleted') && !f.contains('.')) {
+                if (!fieldLower.equals('id') && !fieldLower.endsWith('id') && !fieldLower.contains('date') && !fieldLower.equals('isclosed') && !fieldLower.equals('isdeleted')) {
                     searchFilters.add(f + ' LIKE :escapedSearch');
                 }
             }
