@@ -165,7 +165,7 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
         
         // 1. Always start with Case Number
         const isCaseNumberSorted = this.sortedBy === 'CaseNumber';
-        cols.push({ 
+        cols.push({
             label: 'Case Number', 
             fieldName: 'CaseNumber', 
             type: 'button', 
@@ -261,8 +261,7 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
                         key: col.fieldName, 
                         value: val, 
                         isUrl: col.type === 'button', 
-                        isJira: col.isJira, 
-                        jiraLinks: [] 
+                        isJira: col.isJira
                     };
                 });
                 return { ...c, rowClass: rowClass, cells: cells };
@@ -293,6 +292,9 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
 
     handleSort(event) {
         const field = event.currentTarget.dataset.id;
+        const col = this.columns.find(c => c.fieldName === field);
+        if (col && col.isSortable === false) return;
+
         if (this.sortedBy === field) this.sortedDirection = this.sortedDirection === 'asc' ? 'desc' : 'asc';
         else { this.sortedBy = field; this.sortedDirection = 'asc'; }
         this.offset = 0; this.buildColumns(); this.loadModalData();
@@ -309,9 +311,14 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
             this.searchTerm = '';
 
             if (val.includes(':')) {
-                const parts = val.split(':');
-                const key = parts[0].trim().toLowerCase();
-                const value = parts[1].trim();
+                const firstColon = val.indexOf(':');
+                const key = val.substring(0, firstColon).trim().toLowerCase();
+                let value = val.substring(firstColon + 1).trim();
+                
+                // Support quoted values for colons inside value
+                if (value.startsWith('"') && value.endsWith('"')) {
+                    value = value.substring(1, value.length - 1);
+                }
                 
                 // 1. Check Shortcuts
                 let fieldApiName = SEARCH_SHORTCUTS[key];
@@ -342,7 +349,6 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
     handlePriorityQuickFilter(event) { this.priorityFilter = this.priorityFilter === event.target.value ? '' : event.target.value; this.offset = 0; this.loadModalData(); }
     handleHasJiraToggle() { this.hasJiraFilter = !this.hasJiraFilter; this.offset = 0; this.loadModalData(); }
     handleTableScroll(event) {
-        console.log('Scroll fired!');
         const target = event.target;
         const scrollBottom = target.scrollHeight - target.scrollTop - target.clientHeight;
         if (scrollBottom < 50 && this.isMoreDataAvailable && !this.isLoadingModal && !this.isLoadingMore) {
@@ -409,7 +415,7 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
         const apiNames = selectedFields.map(f => f.apiName);
         this.closeExportModal();
         try {
-            const data = await getCaseList({ 
+            const data = await getCaseList({
                 dashboardId: this.currentDashboardId, 
                 accountId: this.currentAccountId, 
                 fields: apiNames, 

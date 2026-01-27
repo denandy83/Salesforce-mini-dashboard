@@ -91,13 +91,6 @@
                                             <template lwc:if={cell.isUrl}>
                                                 <button class="slds-button slds-button_reset slds-text-link" onclick={viewCase} data-id={row.Id}>{cell.value}</button>
                                             </template>
-                                            <template lwc:else-if={cell.isJira}>
-                                                <template for:each={cell.jiraLinks} for:item="link">
-                                                    <a key={link.id} href={link.url} class="slds-m-right_small slds-text-link" onclick={openJira} data-url={link.url}>
-                                                        {link.name}
-                                                    </a>
-                                                </template>
-                                            </template>
                                             <template lwc:else>
                                                 {cell.value}
                                             </template>
