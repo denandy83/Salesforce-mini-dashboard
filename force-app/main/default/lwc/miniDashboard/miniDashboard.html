@@ -146,12 +146,10 @@
                         </template>
                     </div>
                 </div>
-                <footer class="slds-modal_footer">
-                    <button class="slds-button slds-button_brand" onclick={downloadCSV}>Export to CSV</button>
-                </footer>
             </div>
-            <div class="modal-bottom-actions" style="margin-top: 1rem;">
+            <div class="modal-bottom-actions">
                 <p class="footer-text slds-text-body_small" style="color: white;">Click outside the table to close</p>
+                <lightning-button label="Export to CSV" icon-name="utility:download" variant="brand" onclick={downloadCSV}></lightning-button>
             </div>
         </section>
         <div class="slds-backdrop slds-backdrop_open" onclick={closeExportModal} style="z-index: 9002;"></div>
