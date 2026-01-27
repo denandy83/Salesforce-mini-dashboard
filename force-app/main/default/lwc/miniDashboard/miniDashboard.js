@@ -189,6 +189,12 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
         })
         .then(data => {
             const flattened = this.flattenData(data).map(c => {
+                let rowClass = 'table-row';
+                if (c.Priority === 'Urgent') rowClass += ' priority-urgent';
+                else if (c.Priority === 'High') rowClass += ' priority-high';
+                else if (c.Priority === 'Normal') rowClass += ' priority-normal';
+                else if (c.Priority === 'Low') rowClass += ' priority-low';
+
                 const cells = this.columns.map(col => {
                     let val = c[col.fieldName];
                     let jiraLinks = null;
@@ -200,7 +206,7 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
                     }
                     return { key: col.fieldName, value: val, isUrl: col.type === 'button', isJira: col.isJira, jiraLinks: jiraLinks };
                 });
-                return { ...c, cells: cells };
+                return { ...c, rowClass: rowClass, cells: cells };
             });
             this.modalData = this.offset === 0 ? flattened : [...this.modalData, ...flattened];
             this.isMoreDataAvailable = data.length === this.limit;
