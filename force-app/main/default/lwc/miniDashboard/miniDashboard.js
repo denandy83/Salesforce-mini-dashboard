@@ -90,8 +90,12 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
     get currentFields() { return FIELDS_MAP[this.objectApiName] || []; }
     get showAccountRow() { return !!this.accountId; }
     get accountRowLabel() { return this.icaoValue ? this.icaoValue : 'Account'; }
+    get hasNoModalResults() { return !this.isLoadingModal && this.modalData.length === 0; }
     get priorityFilterUrgent() { return this.priorityFilter === 'Urgent' ? 'brand' : 'neutral'; }
     get priorityFilterHigh() { return this.priorityFilter === 'High' ? 'brand' : 'neutral'; }
+    get priorityFilterNormal() { return this.priorityFilter === 'Normal' ? 'brand' : 'neutral'; }
+    get priorityFilterLow() { return this.priorityFilter === 'Low' ? 'brand' : 'neutral'; }
+    get hasJiraBtnVariant() { return this.hasJiraFilter ? 'brand' : 'neutral'; }
 
     connectedCallback() {
         this.startPolling();
