@@ -111,6 +111,11 @@
                     <template lwc:if={isLoadingModal}>
                         <lightning-spinner alternative-text="Loading" size="medium"></lightning-spinner>
                     </template>
+                    <template lwc:if={isLoadingMore}>
+                        <div class="slds-p-around_small slds-text-align_center slds-text-color_weak">
+                            Loading more...
+                        </div>
+                    </template>
                 </div>
             </div>
 

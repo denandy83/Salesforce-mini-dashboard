@@ -54,6 +54,7 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
     @track priorityFilter = '';
     
     isLoadingModal = false;
+    isLoadingMore = false;
     isMoreDataAvailable = true;
     offset = 0;
     limit = 50;
@@ -180,12 +181,18 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
 
     loadModalData() {
         const cleanFields = this.columnFields.split(',').map(f => f.trim().split(':')[0].trim());
-        this.isLoadingModal = true;
+        
+        if (this.offset === 0) {
+            this.isLoadingModal = true;
+        } else {
+            this.isLoadingMore = true;
+        }
+
         getCaseList({ 
             dashboardId: this.currentDashboardId, accountId: this.currentAccountId, fields: cleanFields,
             sortField: this.sortedBy.replaceAll(DOT_SEP, '.'), sortOrder: this.sortedDirection,
             searchTerm: this.searchTerm, offset: this.offset, onlyMine: this.currentOnlyMine,
-            priorityFilter: this.priorityFilter
+            priorityFilter: this.priorityFilter, limitCount: this.limit
         })
         .then(data => {
             const flattened = this.flattenData(data).map(c => {
@@ -214,7 +221,10 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
         .catch(error => {
             this.handleError('Error loading cases', error);
         })
-        .finally(() => { this.isLoadingModal = false; });
+        .finally(() => { 
+            this.isLoadingModal = false; 
+            this.isLoadingMore = false; 
+        });
     }
 
     flattenData(data) {
@@ -241,7 +251,7 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
         console.log('Scroll fired!');
         const target = event.target;
         const scrollBottom = target.scrollHeight - target.scrollTop - target.clientHeight;
-        if (scrollBottom < 50 && this.isMoreDataAvailable && !this.isLoadingModal) {
+        if (scrollBottom < 50 && this.isMoreDataAvailable && !this.isLoadingModal && !this.isLoadingMore) {
             this.offset += this.limit;
             this.loadModalData();
         }
