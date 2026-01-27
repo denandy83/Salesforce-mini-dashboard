@@ -56,7 +56,7 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
     isLoadingModal = false;
     isMoreDataAvailable = true;
     offset = 0;
-    limit = 20;
+    limit = 50;
 
     @wire(EnclosingTabId) enclosingTabId;
     @wire(getObjectInfo, { objectApiName: CASE_OBJECT }) caseInfo;
@@ -237,7 +237,15 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
 
     handleSearch(event) { this.searchTerm = event.target.value; this.offset = 0; this.loadModalData(); }
     handlePriorityQuickFilter(event) { this.priorityFilter = this.priorityFilter === event.target.value ? '' : event.target.value; this.offset = 0; this.loadModalData(); }
-    handleTableScroll(event) { if (event.target.scrollHeight - event.target.scrollTop - event.target.clientHeight < 20 && this.isMoreDataAvailable && !this.isLoadingModal) { this.offset += this.limit; this.loadModalData(); } }
+    handleTableScroll(event) {
+        console.log('Scroll fired!');
+        const target = event.target;
+        const scrollBottom = target.scrollHeight - target.scrollTop - target.clientHeight;
+        if (scrollBottom < 50 && this.isMoreDataAvailable && !this.isLoadingModal) {
+            this.offset += this.limit;
+            this.loadModalData();
+        }
+    }
         async viewCase(event) {
             const id = event.currentTarget.dataset.id;
             try { await openTab({ recordId: id, focus: true }); } catch (e) { this[NavigationMixin.Navigate]({ type: 'standard__recordPage', attributes: { recordId: id, actionName: 'view' } }); }

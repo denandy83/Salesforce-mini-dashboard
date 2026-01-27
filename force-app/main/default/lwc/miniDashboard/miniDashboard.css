@@ -92,10 +92,9 @@ tr.priority-low    { background-color: rgba(144, 164, 174, 0.1); }
     margin-bottom: 0 !important;
     border-bottom-left-radius: 4px;
     border-bottom-right-radius: 4px;
-}
-
-.table-wrapper {
     height: 60vh;
+    overflow-y: auto !important;
+    display: block;
 }
 
 .footer-text {
