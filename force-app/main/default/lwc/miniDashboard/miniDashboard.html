@@ -1,46 +1,58 @@
 <template>
-    <div class="dashboard-container slds-p-around_small">
-        <!-- Dashboard Rows -->
-        <div class="dashboard-row">
-            <div class="row-label">All</div>
-            <div class="status-grid">
-                <template for:each={totalItems} for:item="item">
-                    <div key={item.id} class={item.cssClass} onclick={handleItemClick} data-id={item.id} data-scope="total" title={item.tooltip} style={item.heatmapStyle}>
-                        <div class="count-bar" style={item.barStyle}></div>
-                        <div class="count-label">{item.fullLabel}</div>
-                        <div class="count-value" style={item.itemStyle}>{item.count}</div>
-                    </div>
-                </template>
-            </div>
-        </div>
-        <div class="dashboard-row">
-            <div class="row-label">My</div>
-            <div class="status-grid">
-                <template for:each={myItems} for:item="item">
-                    <div key={item.id} class={item.cssClass} onclick={handleItemClick} data-id={item.id} data-scope="my" title={item.tooltip} style={item.heatmapStyle}>
-                        <div class="count-bar" style={item.barStyle}></div>
-                        <div class="count-label">{item.fullLabel}</div>
-                        <div class="count-value" style={item.itemStyle}>{item.count}</div>
-                    </div>
-                </template>
-            </div>
-        </div>
-        <template lwc:if={showAccountRow}>
+        <div class="dashboard-container slds-p-around_small">
+            <!-- Row 1: ALL -->
             <div class="dashboard-row">
-                <div class="row-label">{accountRowLabel}</div>
+                <div class="row-label">All</div>
                 <div class="status-grid">
-                    <template for:each={accountItems} for:item="item">
-                        <div key={item.id} class={item.cssClass} onclick={handleItemClick} data-id={item.id} data-scope="account" title={item.tooltip} style={item.heatmapStyle}>
+                    <template for:each={totalItems} for:item="item">
+                        <div key={item.id} class={item.cssClass} onclick={handleItemClick} data-id={item.id} data-scope="total" title={item.tooltip} style={item.heatmapStyle}>
                             <div class="count-bar" style={item.barStyle}></div>
-                            <div class="count-label">{item.fullLabel}</div>
+                            <div class="count-label">
+                                <span class="label-full">{item.fullLabel}</span>
+                                <span class="label-short">{item.shortLabel}</span>
+                            </div>
                             <div class="count-value" style={item.itemStyle}>{item.count}</div>
                         </div>
                     </template>
                 </div>
             </div>
-        </template>
-    </div>
-
+    
+            <!-- Row 2: MY -->
+            <div class="dashboard-row">
+                <div class="row-label">My</div>
+                <div class="status-grid">
+                    <template for:each={myItems} for:item="item">
+                        <div key={item.id} class={item.cssClass} onclick={handleItemClick} data-id={item.id} data-scope="my" title={item.tooltip} style={item.heatmapStyle}>
+                            <div class="count-bar" style={item.barStyle}></div>
+                            <div class="count-label">
+                                <span class="label-full">{item.fullLabel}</span>
+                                <span class="label-short">{item.shortLabel}</span>
+                            </div>
+                            <div class="count-value" style={item.itemStyle}>{item.count}</div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+    
+            <!-- Row 3: ACCOUNT -->
+            <template lwc:if={showAccountRow}>
+                <div class="dashboard-row">
+                    <div class="row-label">{accountRowLabel}</div>
+                    <div class="status-grid">
+                        <template for:each={accountItems} for:item="item">
+                            <div key={item.id} class={item.cssClass} onclick={handleItemClick} data-id={item.id} data-scope="account" title={item.tooltip} style={item.heatmapStyle}>
+                                <div class="count-bar" style={item.barStyle}></div>
+                                <div class="count-label">
+                                    <span class="label-full">{item.fullLabel}</span>
+                                    <span class="label-short">{item.shortLabel}</span>
+                                </div>
+                                <div class="count-value" style={item.itemStyle}>{item.count}</div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </template>
+        </div>
     <!-- Drill-down Modal -->
     <template lwc:if={isModalOpen}>
         <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open slds-modal_large" onclick={closeModal}>
@@ -52,13 +64,26 @@
                             <lightning-input type="search" placeholder="Filter cases..." onchange={handleSearch} variant="label-hidden" is-loading={isSearching}></lightning-input>
                         </div>
                         <div class="slds-col slds-text-align_left slds-m-bottom_small">
-                            <lightning-button-group>
-                                <lightning-button label="Urgent" value="Urgent" variant={priorityFilterUrgent} onclick={handlePriorityQuickFilter}></lightning-button>
-                                <lightning-button label="High" value="High" variant={priorityFilterHigh} onclick={handlePriorityQuickFilter}></lightning-button>
-                                <lightning-button label="Normal" value="Normal" variant={priorityFilterNormal} onclick={handlePriorityQuickFilter}></lightning-button>
-                                <lightning-button label="Low" value="Low" variant={priorityFilterLow} onclick={handlePriorityQuickFilter}></lightning-button>
-                            </lightning-button-group>
-                            <lightning-button label="Has Jira" variant={hasJiraBtnVariant} onclick={handleHasJiraToggle} class="slds-m-left_small"></lightning-button>
+                            <div class="slds-grid slds-grid_vertical-align-center slds-wrap">
+                                <lightning-button-group class="slds-m-right_small">
+                                    <lightning-button label="Urgent" value="Urgent" variant={priorityFilterUrgent} onclick={handlePriorityQuickFilter}></lightning-button>
+                                    <lightning-button label="High" value="High" variant={priorityFilterHigh} onclick={handlePriorityQuickFilter}></lightning-button>
+                                    <lightning-button label="Normal" value="Normal" variant={priorityFilterNormal} onclick={handlePriorityQuickFilter}></lightning-button>
+                                    <lightning-button label="Low" value="Low" variant={priorityFilterLow} onclick={handlePriorityQuickFilter}></lightning-button>
+                                </lightning-button-group>
+                                
+                                <lightning-button label="Has Jira" variant={hasJiraBtnVariant} onclick={handleHasJiraToggle} class="slds-m-right_small"></lightning-button>
+
+                                <template lwc:if={showStatusFilter}>
+                                    <lightning-button-group>
+                                        <lightning-button label="New" value="New" variant={statusNewVariant} onclick={handleStatusToggle}></lightning-button>
+                                        <lightning-button label="Open" value="Open" variant={statusOpenVariant} onclick={handleStatusToggle}></lightning-button>
+                                        <lightning-button label="Waiting" value="Waiting" variant={statusWaitingVariant} onclick={handleStatusToggle}></lightning-button>
+                                        <lightning-button label="On Hold" value="On-Hold" variant={statusHoldVariant} onclick={handleStatusToggle}></lightning-button>
+                                        <lightning-button label="Solved" value="Solved" variant={statusSolvedVariant} onclick={handleStatusToggle}></lightning-button>
+                                    </lightning-button-group>
+                                </template>
+                            </div>
                         </div>
                     </div>
                 </header>

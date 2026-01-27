@@ -18,7 +18,9 @@ public with sharing class MiniDashboardController {
         'New' => new List<String>{'New'},
         'Open' => new List<String>{'Open', 'Working'},
         'Waiting for Customer' => new List<String>{'Waiting for Customer'},
-        'On Hold' => new List<String>{'On Hold'}
+        'On Hold' => new List<String>{'On Hold'},
+        'Solved' => new List<String>{'Solved'},
+        'ALL' => new List<String>{'New', 'Open', 'Working', 'Waiting for Customer', 'On Hold', 'Solved'}
     };
 
     @AuraEnabled
@@ -35,10 +37,12 @@ public with sharing class MiniDashboardController {
             'New' => new StatusSummary(), 
             'Open' => new StatusSummary(), 
             'Waiting for Customer' => new StatusSummary(), 
-            'On Hold' => new StatusSummary()
+            'On Hold' => new StatusSummary(),
+            'Solved' => new StatusSummary(),
+            'ALL' => new StatusSummary()
         };
 
-        String query = 'SELECT Status, Priority, COUNT(Id) cnt FROM Case WHERE Status IN (\'New\', \'Open\', \'Working\', \'Waiting for Customer\', \'On Hold\')';
+        String query = 'SELECT Status, Priority, COUNT(Id) cnt FROM Case WHERE Status IN (\'New\', \'Open\', \'Working\', \'Waiting for Customer\', \'On Hold\', \'Solved\')';
         
         if (accountId != null) query += ' AND AccountId = :accountId';
         if (onlyMine) {
@@ -75,8 +79,8 @@ public with sharing class MiniDashboardController {
     }
 
     @AuraEnabled
-    public static List<Case> getCaseList(String dashboardId, Id accountId, List<String> fields, String sortField, String sortOrder, String searchTerm, Integer offset, String advancedField, String advancedValue, Boolean onlyMine, Integer limitCount, String priorityFilter, Boolean hasJira) {
-        List<String> statuses = statusMap.get(dashboardId);
+    public static List<Case> getCaseList(String dashboardId, Id accountId, List<String> fields, String sortField, String sortOrder, String searchTerm, Integer offset, String advancedField, String advancedValue, Boolean onlyMine, Integer limitCount, List<String> priorityFilter, Boolean hasJira, List<String> statusFilter) {
+        List<String> statuses = (statusFilter != null && !statusFilter.isEmpty()) ? statusFilter : statusMap.get(dashboardId);
         if (statuses == null) return new List<Case>();
 
         Set<String> fieldSet = new Set<String>{'Id', 'CaseNumber'};
@@ -109,8 +113,8 @@ public with sharing class MiniDashboardController {
             query += ' AND OwnerId = :currentUserId';
         }
 
-        if (String.isNotBlank(priorityFilter)) {
-            query += ' AND Priority = :priorityFilter';
+        if (priorityFilter != null && !priorityFilter.isEmpty()) {
+            query += ' AND Priority IN :priorityFilter';
         }
 
         if (hasJira == true) {

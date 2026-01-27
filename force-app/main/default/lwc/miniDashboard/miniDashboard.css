@@ -9,27 +9,27 @@
     background: #ffffff;
 }
 
-/* Row Layout from pics/1.png */
+/* Row Layout */
 .dashboard-row {
     display: flex;
-    align-items: center;
-    padding: 1rem 0;
+    flex-direction: column;
+    padding: 0.5rem 0;
     border-bottom: 1px solid #f0f0f0;
 }
 
 .row-label {
-    width: 80px;
+    width: 100%;
     font-weight: 800;
     color: #888;
     text-transform: uppercase;
-    font-size: 0.85rem;
-    flex-shrink: 0;
+    font-size: 0.75rem;
+    margin-bottom: 0.5rem;
 }
 
 .status-grid {
     display: flex;
-    flex-grow: 1;
-    justify-content: space-around;
+    width: 100%;
+    justify-content: space-between;
 }
 
 .count-wrapper {
@@ -38,10 +38,13 @@
     padding: 0 0 0.5rem 0;
     transition: background 0.2s;
     border-radius: 4px;
-    flex: 1 1 0px;
-    margin: 0 4px;
+    flex: 1 1 0;
+    margin: 0 2px;
     border: 1px solid #e0e5ee;
     overflow: hidden;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
 }
 
 .count-wrapper:hover {
@@ -70,24 +73,40 @@ tr.priority-low    { background-color: rgba(144, 164, 174, 0.1); }
 .count-bar {
     height: 6px;
     width: 100%;
+    flex-shrink: 0;
     margin: 0;
     border-radius: 0;
 }
 
 .count-label {
-    font-size: 0.75rem;
+    font-size: 0.65rem;
     font-weight: 800;
     color: #aaa;
     text-transform: uppercase;
-    margin-top: 8px;
+    margin-top: 6px;
     margin-bottom: 2px;
 }
 
+.label-short {
+    display: none;
+}
+
+@media screen and (max-width: 1200px) {
+    .label-full {
+        display: none;
+    }
+    .label-short {
+        display: inline;
+    }
+}
+
 .count-value {
-    font-size: 1.8rem;
+    font-size: clamp(1rem, 1.5vw, 1.5rem);
     font-weight: 700;
     color: #000;
     line-height: 1;
+    white-space: nowrap;
+    overflow: hidden;
 }
 
 /* Modal Styles */
