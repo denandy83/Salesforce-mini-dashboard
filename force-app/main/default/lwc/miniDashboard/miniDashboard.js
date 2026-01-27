@@ -141,21 +141,43 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
 
     buildColumns() {
         const fieldList = this.columnFields.split(',').map(f => f.trim());
-        const cols = [{ label: 'Case Number', fieldName: 'CaseNumber', type: 'button' }];
+        const cols = [{ label: 'Case Number', fieldName: 'CaseNumber', type: 'button', style: 'width: 100px; min-width: 100px; max-width: 100px;' }];
+        
         fieldList.forEach(f => {
             if (f.toLowerCase() === 'casenumber') return;
-            let fieldName = f; let label = f;
-            if (f.includes('.')) { fieldName = f.replaceAll('.', DOT_SEP); label = f.split('.')[0] + ' ' + f.split('.')[1]; } 
-            else if (this.caseInfo?.data?.fields[f]) { label = this.caseInfo.data.fields[f].label; }
-            cols.push({ label: label, fieldName: fieldName, headerClass: fieldName === this.sortedBy ? 'is-sorted' : '', showSortIcon: fieldName === this.sortedBy });
+            const parts = f.split(':');
+            const rawField = parts[0].trim();
+            const width = parts.length > 1 ? parts[1].trim() : null;
+
+            let fieldName = rawField;
+            let label = rawField;
+            let type = 'text';
+
+            if (rawField.includes('.')) {
+                fieldName = rawField.replaceAll('.', DOT_SEP);
+                label = rawField.split('.')[0] + ' ' + rawField.split('.')[1];
+            } else if (this.caseInfo?.data?.fields[rawField]) {
+                label = this.caseInfo.data.fields[rawField].label;
+                if (rawField.toLowerCase().includes('date')) type = 'date';
+            }
+
+            const style = width ? `width: ${width}px; min-width: ${width}px;` : '';
+            cols.push({ 
+                label: label, 
+                fieldName: fieldName, 
+                type: type,
+                style: style,
+                headerClass: fieldName === this.sortedBy ? 'is-sorted' : '', 
+                showSortIcon: fieldName === this.sortedBy 
+            });
         });
         this.columns = cols;
     }
 
     loadModalData() {
-        const cleanFields = this.columnFields.split(',').map(f => f.trim());
+        const cleanFields = this.columnFields.split(',').map(f => f.trim().split(':')[0].trim());
         this.isLoadingModal = true;
-        getCaseList({
+        getCaseList({ 
             dashboardId: this.currentDashboardId, accountId: this.currentAccountId, fields: cleanFields,
             sortField: this.sortedBy.replaceAll(DOT_SEP, '.'), sortOrder: this.sortedDirection,
             searchTerm: this.searchTerm, offset: this.offset, onlyMine: this.currentOnlyMine,
@@ -163,18 +185,24 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
         })
         .then(data => {
             const flattened = this.flattenData(data).map(c => {
-                let rowClass = 'table-row';
-                if (c.Priority === 'Urgent') rowClass += ' priority-urgent';
-                else if (c.Priority === 'High') rowClass += ' priority-high';
                 const cells = this.columns.map(col => {
                     let val = c[col.fieldName];
-                    if (c[col.fieldName] && col.fieldName.includes('Date')) val = this.formatDate(c[col.fieldName]);
-                    return { key: col.fieldName, value: val, isUrl: col.type === 'button' };
+                    let jiraLinks = null;
+                    if (col.isJira) {
+                        jiraLinks = c[col.fieldName + '_list'] || [];
+                        val = '';
+                    } else if (val && col.fieldName.toLowerCase().includes('date')) {
+                        val = this.formatDate(val);
+                    }
+                    return { key: col.fieldName, value: val, isUrl: col.type === 'button', isJira: col.isJira, jiraLinks: jiraLinks };
                 });
-                return { ...c, rowClass: rowClass, cells: cells };
+                return { ...c, cells: cells };
             });
             this.modalData = this.offset === 0 ? flattened : [...this.modalData, ...flattened];
             this.isMoreDataAvailable = data.length === this.limit;
+        })
+        .catch(error => {
+            this.handleError('Error loading cases', error);
         })
         .finally(() => { this.isLoadingModal = false; });
     }
@@ -200,8 +228,16 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
     handleSearch(event) { this.searchTerm = event.target.value; this.offset = 0; this.loadModalData(); }
     handlePriorityQuickFilter(event) { this.priorityFilter = this.priorityFilter === event.target.value ? '' : event.target.value; this.offset = 0; this.loadModalData(); }
     handleTableScroll(event) { if (event.target.scrollHeight - event.target.scrollTop - event.target.clientHeight < 20 && this.isMoreDataAvailable && !this.isLoadingModal) { this.offset += this.limit; this.loadModalData(); } }
-    async viewCase(event) { const id = event.currentTarget.dataset.id; try { await openTab({ recordId: id, focus: true }); } catch (e) { this[NavigationMixin.Navigate]({ type: 'standard__recordPage', attributes: { recordId: id, actionName: 'view' } }); } }
-    closeModal() { this.isModalOpen = false; }
+        async viewCase(event) {
+            const id = event.currentTarget.dataset.id;
+            try { await openTab({ recordId: id, focus: true }); } catch (e) { this[NavigationMixin.Navigate]({ type: 'standard__recordPage', attributes: { recordId: id, actionName: 'view' } }); }
+        }
+    
+        handleStopPropagation(event) {
+            event.stopPropagation();
+        }
+    
+        closeModal() { this.isModalOpen = false; }
     openExportConfig() { this.selectableFields = this.columnFields.split(',').map(f => ({ apiName: f.trim(), label: f.trim(), selected: true })); this.isExportModalOpen = true; }
     closeExportModal() { this.isExportModalOpen = false; }
     handleFieldToggle(event) { this.selectableFields = this.selectableFields.map(f => f.apiName === event.target.dataset.id ? { ...f, selected: event.target.checked } : f); }
