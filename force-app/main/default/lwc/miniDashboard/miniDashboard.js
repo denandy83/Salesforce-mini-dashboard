@@ -248,13 +248,14 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
             this.columns = cols;
         }
     
-        loadModalData() {
-            const cleanFields = this.columnFields.split(',').map(f => f.trim().split(':')[0].trim());
-            
-            // Ensure Status field is retrieved for ALL view
-            if (this.currentDashboardId === 'ALL' && !cleanFields.includes('Status')) {
-                cleanFields.push('Status');
-            }
+    loadModalData() {
+        const cleanFields = this.columnFields.split(',').map(f => f.trim().split(':')[0].trim());
+        
+        // Ensure Status field is retrieved for ALL view (case-insensitive check)
+        const hasStatus = cleanFields.some(f => f.toLowerCase() === 'status');
+        if (this.currentDashboardId === 'ALL' && !hasStatus) {
+            cleanFields.push('Status');
+        }
     
             if (this.offset === 0) {
                 if (this.isFirstModalLoad) { this.isLoadingModal = true; this.isFirstModalLoad = false; } 
