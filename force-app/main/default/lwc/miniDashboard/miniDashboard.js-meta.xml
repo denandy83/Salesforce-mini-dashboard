@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>65.0</apiVersion>
+    <isExposed>true</isExposed>
+    <masterLabel>Mini Ticket Dashboard</masterLabel>
+    <description>Displays ticket counts for New, Open, and Waiting statuses with polling and drill-down.</description>
+    <targets>
+        <target>lightning__AppPage</target>
+        <target>lightning__HomePage</target>
+        <target>lightning__RecordPage</target>
+        <target>lightning__UtilityBar</target>
+    </targets>
+    <targetConfigs>
+        <targetConfig targets="lightning__AppPage,lightning__HomePage,lightning__RecordPage,lightning__UtilityBar">
+            <property name="newThreshold" type="Integer" default="5" label="New Tickets Threshold" description="Color changes if count exceeds this number."/>
+            <property name="openThreshold" type="Integer" default="10" label="Open Tickets Threshold" description="Color changes if count exceeds this number."/>
+            <property name="waitingThreshold" type="Integer" default="5" label="Waiting Tickets Threshold" description="Color changes if count exceeds this number."/>
+            <property name="holdThreshold" type="Integer" default="5" label="On Hold Tickets Threshold" description="Color changes if count exceeds this number."/>
+            <property name="columnFields" type="String" default="Subject, Priority, CreatedDate" label="Drill-down Columns" description="Comma-separated list of Case field API names to show in the modal."/>
+            <property name="extraExportFields" type="String" default="Description, Reason, Origin, Contact.Email" label="Additional Export Fields" description="Comma-separated list of additional fields available for selection in the export popup."/>
+            <property name="defaultSortField" type="String" default="CreatedDate" label="Default Sort Field" description="API Name of the field to sort by initially."/>
+            <property name="defaultSortDirection" type="String" default="desc" label="Default Sort Direction" description="Order to sort (asc or desc)."/>
+            <property name="pollingFrequency" type="Integer" default="60" label="Polling Frequency (seconds)" description="How often the counts should refresh. Minimum 5 seconds."/>
+            
+            <property name="thresholdColor" type="String" default="#ff0000" label="Alert Color" description="Hex code for the alert color (e.g., #ff0000)."/>
+            <property name="normalColor" type="String" default="#000000" label="Normal Color" description="Hex code for the normal color (e.g., #000000)."/>
+        </targetConfig>
+    </targetConfigs>
+</LightningComponentBundle>

@@ -1,0 +1,137 @@
+<template>
+    <div class="dashboard-container slds-p-around_small">
+        <!-- Row 1: ALL -->
+        <div class="dashboard-row">
+            <div class="row-label">All</div>
+            <div class="status-grid">
+                <template for:each={totalItems} for:item="item">
+                    <div key={item.id} class={item.cssClass} onclick={handleItemClick} data-id={item.id} data-scope="total" title={item.tooltip} style={item.heatmapStyle}>
+                        <div class="count-bar" style={item.barStyle}></div>
+                        <div class="count-label">{item.fullLabel}</div>
+                        <div class="count-value" style={item.itemStyle}>{item.count}</div>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <!-- Row 2: MY -->
+        <div class="dashboard-row">
+            <div class="row-label">My</div>
+            <div class="status-grid">
+                <template for:each={myItems} for:item="item">
+                    <div key={item.id} class={item.cssClass} onclick={handleItemClick} data-id={item.id} data-scope="my" title={item.tooltip} style={item.heatmapStyle}>
+                        <div class="count-bar" style={item.barStyle}></div>
+                        <div class="count-label">{item.fullLabel}</div>
+                        <div class="count-value" style={item.itemStyle}>{item.count}</div>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <!-- Row 3: ACCOUNT -->
+        <template lwc:if={showAccountRow}>
+            <div class="dashboard-row">
+                <div class="row-label">{accountRowLabel}</div>
+                <div class="status-grid">
+                    <template for:each={accountItems} for:item="item">
+                        <div key={item.id} class={item.cssClass} onclick={handleItemClick} data-id={item.id} data-scope="account" title={item.tooltip} style={item.heatmapStyle}>
+                            <div class="count-bar" style={item.barStyle}></div>
+                            <div class="count-label">{item.fullLabel}</div>
+                            <div class="count-value" style={item.itemStyle}>{item.count}</div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </template>
+    </div>
+
+    <!-- Drill-down Modal -->
+    <template lwc:if={isModalOpen}>
+        <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open slds-modal_large">
+            <div class="slds-modal_container modal-content-area">
+                <header class="slds-modal_header">
+                    <button class="slds-button slds-button_icon slds-modal_close slds-button_icon-inverse" title="Close" onclick={closeModal}>
+                        <lightning-icon icon-name="utility:close" alternative-text="close" variant="inverse" size="small"></lightning-icon>
+                    </button>
+                    <h2 class="slds-modal_title slds-hyphenate">{modalTitle}</h2>
+                    <div class="slds-grid slds-grid_align-spread slds-m-top_small">
+                        <div class="slds-col slds-size_1-of-3">
+                            <lightning-input type="search" placeholder="Filter cases..." onchange={handleSearch} variant="label-hidden"></lightning-input>
+                        </div>
+                        <lightning-button-group>
+                            <lightning-button label="Urgent" value="Urgent" variant={priorityFilterUrgent} onclick={handlePriorityQuickFilter}></lightning-button>
+                            <lightning-button label="High" value="High" variant={priorityFilterHigh} onclick={handlePriorityQuickFilter}></lightning-button>
+                        </lightning-button-group>
+                    </div>
+                </header>
+
+                <div class="slds-modal_content slds-p-around_none table-wrapper slds-scrollable_y" onscroll={handleTableScroll}>
+                    <table class="slds-table slds-table_bordered slds-table_fixed-layout">
+                        <thead>
+                            <tr class="slds-line-height_reset">
+                                <template for:each={columns} for:item="col">
+                                    <th key={col.fieldName} class={col.headerClass} scope="col" onclick={handleSort} data-id={col.fieldName} style={col.style}>
+                                        <div class="slds-grid slds-grid_vertical-align-center">
+                                            <span class="slds-truncate" title={col.label}>{col.label}</span>
+                                            <lightning-icon icon-name={sortIcon} size="xx-small" class="slds-m-left_xx-small" if:true={col.showSortIcon}></lightning-icon>
+                                        </div>
+                                    </th>
+                                </template>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template for:each={modalData} for:item="row">
+                                <tr key={row.Id} class={row.rowClass}>
+                                    <template for:each={row.cells} for:item="cell">
+                                        <td key={cell.key} class={cell.class}>
+                                            <template lwc:if={cell.isUrl}>
+                                                <button class="slds-button slds-button_reset slds-text-link" onclick={viewCase} data-id={row.Id}>{cell.value}</button>
+                                            </template>
+                                            <template lwc:else>
+                                                {cell.value}
+                                            </template>
+                                        </td>
+                                    </template>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                    <template lwc:if={isLoadingModal}>
+                        <lightning-spinner alternative-text="Loading" size="medium"></lightning-spinner>
+                    </template>
+                </div>
+
+                <footer class="slds-modal_footer slds-grid slds-grid_align-spread">
+                    <span class="footer-text slds-text-body_small">Click outside to close</span>
+                    <lightning-button label="Export to CSV" icon-name="utility:download" variant="brand" onclick={openExportConfig}></lightning-button>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open" onclick={closeModal}></div>
+    </template>
+
+    <!-- Export Modal -->
+    <template lwc:if={isExportModalOpen}>
+        <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open slds-modal_small">
+            <div class="slds-modal_container modal-content-area">
+                <header class="slds-modal_header">
+                    <h2 class="slds-modal_title">Select Export Columns</h2>
+                </header>
+                <div class="slds-modal_content slds-p-around_medium">
+                    <div class="slds-grid slds-wrap">
+                        <template for:each={selectableFields} for:item="f">
+                            <div key={f.apiName} class="slds-col slds-size_1-of-2 slds-p-around_xx-small">
+                                <lightning-input type="checkbox" label={f.label} checked={f.selected} data-id={f.apiName} onchange={handleFieldToggle}></lightning-input>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+                <footer class="slds-modal_footer">
+                    <button class="slds-button slds-button_neutral" onclick={closeExportModal}>Cancel</button>
+                    <button class="slds-button slds-button_brand" onclick={downloadCSV}>Export to CSV</button>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open" onclick={closeExportModal} style="z-index: 9002;"></div>
+    </template>
+</template>
