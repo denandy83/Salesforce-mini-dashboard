@@ -20,8 +20,8 @@ const DEFAULT_COLUMNS = 'Subject, Priority, CreatedDate';
 const DOT_SEP = '__DOT__';
 
 const SEARCH_SHORTCUTS = {
-    'icao account': 'Account.AVB_ICAO_Account__c',
-    'icao': 'Account.AVB_ICAO_Account__c',
+    'icao account': 'AVB_ICAO_Account__c',
+    'icao': 'AVB_ICAO_Account__c',
     'account': 'Account.Name',
     'case number': 'CaseNumber',
     'case #': 'CaseNumber'
@@ -424,7 +424,8 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
                     rowClass: rowClass, 
                     cells: cells,
                     hasJiraDetails: jiraDetails.length > 0,
-                    jiraDetails: jiraDetails
+                    jiraDetails: jiraDetails,
+                    jiraKey: c.Id + '-jira'
                 };
             });
             this.modalData = this.offset === 0 ? flattened : [...this.modalData, ...flattened];
@@ -509,7 +510,7 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
         const status = event.target.value;
         const statusList = status === 'Open' ? ['Open', 'Working'] : 
                           status === 'Waiting' ? ['Waiting for Customer'] :
-                          status === 'On Hold' ? ['On Hold'] : [status];
+                          (status === 'On Hold' || status === 'On-Hold') ? ['On Hold'] : [status];
         
         let newFilter = [...this.statusFilter];
         const hasAll = statusList.every(s => newFilter.includes(s));

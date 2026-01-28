@@ -90,7 +90,7 @@
                                             <lightning-button label="New" value="New" variant={statusNewVariant} onclick={handleStatusToggle}></lightning-button>
                                             <lightning-button label="Open" value="Open" variant={statusOpenVariant} onclick={handleStatusToggle}></lightning-button>
                                             <lightning-button label="Waiting" value="Waiting" variant={statusWaitingVariant} onclick={handleStatusToggle}></lightning-button>
-                                            <lightning-button label="On Hold" value="On-Hold" variant={statusHoldVariant} onclick={handleStatusToggle}></lightning-button>
+                                            <lightning-button label="On Hold" value="On Hold" variant={statusHoldVariant} onclick={handleStatusToggle}></lightning-button>
                                             <lightning-button label="Solved" value="Solved" variant={statusSolvedVariant} onclick={handleStatusToggle}></lightning-button>
                                         </lightning-button-group>
                                     </div>
@@ -148,7 +148,7 @@
                                     </template>
                                 </tr>
                                 <template lwc:if={row.hasJiraDetails}>
-                                    <tr key={row.Id} class="jira-detail-row">
+                                    <tr key={row.jiraKey} class="jira-detail-row">
                                         <td colspan="100">
                                             <div class="slds-p-around_small" style="background-color: #f8f9fb; border-left: 4px solid #0070d2;">
                                                 <ul class="slds-list_vertical">

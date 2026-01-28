@@ -117,12 +117,13 @@ public with sharing class MiniDashboardController {
             query += ' AND Priority IN :priorityFilter';
         }
 
+        Boolean unresponsiveVal;
         if (unresponsiveFilter != null && !unresponsiveFilter.isEmpty()) {
             // If both True and False are selected, we don't filter (show all).
             // If only one is selected, filter by that boolean value.
             if (unresponsiveFilter.size() == 1) {
-                Boolean val = Boolean.valueOf(unresponsiveFilter[0]);
-                query += ' AND AVB_Warn_Unresponsive_Customer__c = :val';
+                unresponsiveVal = Boolean.valueOf(unresponsiveFilter[0]);
+                query += ' AND AVB_Warn_Unresponsive_Customer__c = :unresponsiveVal';
             }
         }
 
@@ -139,7 +140,10 @@ public with sharing class MiniDashboardController {
             List<String> searchFilters = new List<String>();
             for (String f : fieldSet) {
                 String fieldLower = f.toLowerCase();
-                if (!fieldLower.equals('id') && !fieldLower.endsWith('id') && !fieldLower.contains('date') && !fieldLower.equals('isclosed') && !fieldLower.equals('isdeleted')) {
+                // Exclude IDs, dates, and Booleans from LIKE search
+                if (!fieldLower.equals('id') && !fieldLower.endsWith('id') && !fieldLower.contains('date') && 
+                    !fieldLower.equals('isclosed') && !fieldLower.equals('isdeleted') && 
+                    !fieldLower.equals('avb_warn_unresponsive_customer__c')) {
                     searchFilters.add(f + ' LIKE :escapedSearch');
                 }
             }
