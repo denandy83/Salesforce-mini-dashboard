@@ -131,9 +131,9 @@
                                 </template>
                             </tr>
                         </thead>
-                        <tbody>
-                            <template for:each={modalData} for:item="row">
-                                <tr key={row.Id} class={row.rowClass}>
+                        <template for:each={modalData} for:item="row">
+                            <tbody key={row.Id} class="case-row-group">
+                                <tr class={row.rowClass}>
                                     <template for:each={row.cells} for:item="cell">
                                         <td key={cell.key} class={cell.class}>
                                             <template lwc:if={cell.isUrl}>
@@ -195,8 +195,8 @@
                                         </div>
                                     </td>
                                 </tr>
-                            </template>
-                        </tbody>
+                            </tbody>
+                        </template>
                     </table>
                     <template lwc:if={isLoadingModal}>
                         <lightning-spinner alternative-text="Loading" size="medium"></lightning-spinner>

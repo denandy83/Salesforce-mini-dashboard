@@ -143,6 +143,10 @@ tr.priority-low    { background-color: rgba(144, 164, 174, 0.1); }
     border-left: 4px solid #0070d2;
 }
 
+.case-row-group {
+    border-top: 1px solid #dddbda;
+}
+
 .footer-text {
     color: #ffffff !important;
     font-weight: 600;

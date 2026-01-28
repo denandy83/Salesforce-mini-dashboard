@@ -465,14 +465,19 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
         if (col && col.isSortable === false) return;
         if (this.sortedBy === field) this.sortedDirection = this.sortedDirection === 'asc' ? 'desc' : 'asc';
         else { this.sortedBy = field; this.sortedDirection = 'asc'; }
-        this.offset = 0; this.buildColumns(); this.loadModalData();
+        this.offset = 0; 
+        this.modalData = [];
+        this.buildColumns(); 
+        this.loadModalData();
     }
 
     handleSearch(event) {
         const val = event.target.value;
         if (this.searchTimeout) clearTimeout(this.searchTimeout);
         this.searchTimeout = setTimeout(() => {
-            this.offset = 0; this.advancedField = ''; this.advancedValue = ''; this.searchTerm = '';
+            this.offset = 0; 
+            this.modalData = [];
+            this.advancedField = ''; this.advancedValue = ''; this.searchTerm = '';
             if (val.includes(':')) {
                 const firstColon = val.indexOf(':');
                 const key = val.substring(0, firstColon).trim().toLowerCase();
