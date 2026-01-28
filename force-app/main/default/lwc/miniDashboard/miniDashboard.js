@@ -245,10 +245,10 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
         this.currentAccountId = event.currentTarget.dataset.scope === 'account' ? this.accountId : null;
         this.currentOnlyMine = event.currentTarget.dataset.scope === 'my';
         
-        // Reset filters when opening KPI
-        this.statusFilter = [];
-        this.priorityFilter = [];
-        this.unresponsiveFilter = [];
+        // Reset only search-related filters when opening KPI
+        this.searchTerm = '';
+        this.advancedField = '';
+        this.advancedValue = '';
 
         this.modalData = []; this.offset = 0; this.isModalOpen = true; this.isFirstModalLoad = true;
         this.buildColumns(); this.loadModalData();
@@ -473,24 +473,34 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
 
     handleSearch(event) {
         const val = event.target.value;
+        this.searchTerm = val; // Sync immediately to keep UI stable
         if (this.searchTimeout) clearTimeout(this.searchTimeout);
         this.searchTimeout = setTimeout(() => {
             this.offset = 0; 
             this.modalData = [];
-            this.advancedField = ''; this.advancedValue = ''; this.searchTerm = '';
+            this.advancedField = ''; 
+            this.advancedValue = '';
+            
             if (val.includes(':')) {
                 const firstColon = val.indexOf(':');
                 const key = val.substring(0, firstColon).trim().toLowerCase();
                 let value = val.substring(firstColon + 1).trim();
                 if (value.startsWith('"') && value.endsWith('"')) value = value.substring(1, value.length - 1);
+                
                 let fieldApiName = SEARCH_SHORTCUTS[key];
                 if (!fieldApiName) {
-                    const col = this.columns.find(c => c.label.toLowerCase() === key || c.fieldName.toLowerCase() === key.replaceAll(' ', '.') || c.fieldName.toLowerCase() === key.replaceAll(' ', DOT_SEP));
+                    const col = this.columns.find(c => 
+                        c.label.toLowerCase() === key || 
+                        c.fieldName.toLowerCase() === key.replaceAll(' ', '.') || 
+                        c.fieldName.toLowerCase() === key.replaceAll(' ', DOT_SEP)
+                    );
                     if (col) fieldApiName = col.fieldName.replaceAll(DOT_SEP, '.');
                 }
-                if (fieldApiName) { this.advancedField = fieldApiName; this.advancedValue = value; } else { this.searchTerm = val; }
-            } else {
-                this.searchTerm = val;
+                
+                if (fieldApiName) { 
+                    this.advancedField = fieldApiName; 
+                    this.advancedValue = value; 
+                }
             }
             this.loadModalData();
         }, 300);
@@ -559,7 +569,12 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
     }
 
     handleStopPropagation(event) { event.stopPropagation(); }
-    closeModal() { this.isModalOpen = false; }
+    closeModal() { 
+        this.isModalOpen = false; 
+        this.searchTerm = '';
+        this.advancedField = '';
+        this.advancedValue = '';
+    }
     
     openExportConfig() {
         const cols = this.columnFields.split(',').map(f => f.trim().split(':')[0].trim());
