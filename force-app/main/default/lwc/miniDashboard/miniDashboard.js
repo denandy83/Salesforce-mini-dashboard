@@ -27,6 +27,17 @@ const SEARCH_SHORTCUTS = {
     'case #': 'CaseNumber'
 };
 
+const JIRA_EXTRA_FIELDS = [
+    { apiName: 'AVB_Status__c', label: 'Jira Status' },
+    { apiName: 'AVB_Priority__c', label: 'Jira Priority' },
+    { apiName: 'AVB_Fix_Versions__c', label: 'Jira Fix Version' },
+    { apiName: 'AVB_Assignee__c', label: 'Jira Assignee' },
+    { apiName: 'AVB_Reporter__c', label: 'Jira Reporter' },
+    { apiName: 'AVB_Due_Date__c', label: 'Jira Due Date' },
+    { apiName: 'AVB_Customers__c', label: 'Jira Customers' },
+    { apiName: 'AVB_Base_Cloud_Tools_Environment__c', label: 'Jira Environment' }
+];
+
 export default class MiniDashboard extends NavigationMixin(LightningElement) {
     @api recordId;
     @api objectApiName;
@@ -91,7 +102,8 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
 
     accountId;
     icaoValue;
-    pollingInterval;
+    pollingTimeout;
+    isPollingEnabled = false;
     currentDashboardId;
     currentAccountId;
     currentOnlyMine = false;
@@ -101,6 +113,14 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
     searchTimeout;
     advancedField = '';
     advancedValue = '';
+
+    get shouldShowWarnField() {
+        return this.currentDashboardId === 'ALL' || this.currentDashboardId === 'Waiting for Customer';
+    }
+
+    get searchPlaceholder() {
+        return `Filter ${this.modalData.length}${this.isMoreDataAvailable ? '+' : ''} cases...`;
+    }
 
     initItems() {
         return [
@@ -142,6 +162,7 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
     get statusSolvedVariant() { return this.statusFilter.includes('Solved') ? 'brand' : 'neutral'; }
 
     connectedCallback() {
+        this.fetchData();
         this.startPolling();
         if (onTabFocused) { 
             onTabFocused((event) => { 
@@ -156,11 +177,28 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
         }
     }
 
-    startPolling() { this.stopPolling(); this.pollingInterval = setInterval(() => { this.fetchData(); }, (this.pollingFrequency || 60) * 1000); }
-    stopPolling() { if (this.pollingInterval) clearInterval(this.pollingInterval); }
+    startPolling() { 
+        this.stopPolling(); 
+        this.isPollingEnabled = true;
+        this.pollingTimeout = setTimeout(() => this._performPoll(), (this.pollingFrequency || 60) * 1000); 
+    }
+
+    stopPolling() { 
+        this.isPollingEnabled = false;
+        if (this.pollingTimeout) clearTimeout(this.pollingTimeout); 
+    }
+
+    _performPoll() {
+        if (!this.isPollingEnabled) return;
+        this.fetchData().finally(() => {
+            if (this.isPollingEnabled) {
+                this.pollingTimeout = setTimeout(() => this._performPoll(), (this.pollingFrequency || 60) * 1000);
+            }
+        });
+    }
 
     fetchData() {
-        getDashboardData({ accountId: this.accountId })
+        return getDashboardData({ accountId: this.accountId })
             .then(result => {
                 this.totalItems = this.processItems(this.totalItems, result.totals, '');
                 this.myItems = this.processItems(this.myItems, result.myTickets, 'my');
@@ -216,7 +254,7 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
 
         // Conditionally handle AVB_Warn_Unresponsive_Customer__c
         const warnField = 'AVB_Warn_Unresponsive_Customer__c';
-        const isWarnKpi = this.currentDashboardId === 'ALL' || this.currentDashboardId === 'Waiting for Customer';
+        const isWarnKpi = this.shouldShowWarnField;
         
         // Filter out the field if the KPI condition is not met, but keep it in place if it is met.
         // If not met, we remove it from the list entirely so it doesn't render.
@@ -302,7 +340,7 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
         }
 
         const warnField = 'AVB_Warn_Unresponsive_Customer__c';
-        const isWarnKpi = this.currentDashboardId === 'ALL' || this.currentDashboardId === 'Waiting for Customer';
+        const isWarnKpi = this.shouldShowWarnField;
         
         // Filter out the field if not in the correct KPI context
         const finalFields = cleanFields.filter(f => {
@@ -491,6 +529,7 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
         const extras = this.extraExportFields ? this.extraExportFields.split(',') : [];
         const allFields = [...this.columnFields.split(','), ...extras].map(f => f.trim()).filter(f => f);
         const uniqueFields = []; const seen = new Set();
+        
         allFields.forEach(f => {
             const apiName = f.split(':')[0].trim();
             if (!seen.has(apiName)) {
@@ -498,9 +537,7 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
                 let isVisible = cols.includes(apiName);
                 
                 // Only select warn field by default for ALL or Waiting
-                if (apiName === 'AVB_Warn_Unresponsive_Customer__c' && 
-                    this.currentDashboardId !== 'ALL' && 
-                    this.currentDashboardId !== 'Waiting for Customer') {
+                if (apiName === 'AVB_Warn_Unresponsive_Customer__c' && !this.shouldShowWarnField) {
                     isVisible = false;
                 }
 
@@ -509,6 +546,18 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
                 if (col) label = col.label;
                 else if (this.caseInfo?.data?.fields[apiName]) label = this.caseInfo.data.fields[apiName].label;
                 uniqueFields.push({ apiName: apiName, label: label, selected: isVisible });
+            }
+        });
+
+        // Add Jira Extra Fields
+        JIRA_EXTRA_FIELDS.forEach(extra => {
+            if (!seen.has(extra.apiName)) {
+                seen.add(extra.apiName);
+                uniqueFields.push({ 
+                    apiName: extra.apiName, 
+                    label: extra.label, 
+                    selected: this.hasJiraFilter 
+                });
             }
         });
         
@@ -530,7 +579,19 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
 
     async downloadCSV() {
         const selectedFields = this.selectableFields.filter(f => f.selected);
-        const apiNames = selectedFields.map(f => f.apiName);
+        
+        // Prepare fields for Apex: Exclude extra Jira fields, ensure 'Jira' is present if any Jira field is selected
+        const jiraExtraApiNames = JIRA_EXTRA_FIELDS.map(j => j.apiName);
+        const hasAnyJiraField = selectedFields.some(f => f.apiName === 'Jira' || jiraExtraApiNames.includes(f.apiName));
+        
+        let apiNames = selectedFields
+            .map(f => f.apiName)
+            .filter(apiName => !jiraExtraApiNames.includes(apiName)); // Remove extras from Case query
+        
+        if (hasAnyJiraField && !apiNames.includes('Jira')) {
+            apiNames.push('Jira');
+        }
+
         this.closeExportModal();
         try {
             const data = await getCaseList({ 
@@ -545,11 +606,7 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
             // Build Header Row
             let headerRow = 'Case Number,Link';
             selectedFields.forEach(f => {
-                if (f.apiName.toLowerCase() === 'jira') {
-                    headerRow += ',Jira Key,Jira Status,Jira Priority,Jira Fix Version,Jira Assignee,Jira Reporter,Jira Due Date,Jira Customers,Jira Environment';
-                } else {
-                    headerRow += `,"${f.label}"`;
-                }
+                headerRow += `,"${f.label}"`;
             });
             let csv = headerRow + '\n';
             
@@ -558,20 +615,23 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
                 const baseLinePart1 = `${row.CaseNumber},${caseLink}`;
                 
                 // Check if we need to expand rows for Jira
-                const jiraField = selectedFields.find(f => f.apiName.toLowerCase() === 'jira');
                 const jiraData = row['Jira_Tickets__r'];
-                const tickets = jiraField && Array.isArray(jiraData) ? jiraData : (jiraData ? jiraData.records : []);
+                const tickets = hasAnyJiraField && Array.isArray(jiraData) ? jiraData : (jiraData ? jiraData.records : []);
                 
                 const rowsToOutput = (tickets && tickets.length > 0) ? tickets : [null];
 
                 rowsToOutput.forEach(ticket => {
                     let line = baseLinePart1;
                     selectedFields.forEach(f => { 
-                        if (f.apiName.toLowerCase() === 'jira') {
+                        if (f.apiName === 'Jira') {
+                            line += `,"${ticket ? ticket.Name : ''}"`;
+                        } else if (jiraExtraApiNames.includes(f.apiName)) {
                             if (ticket) {
-                                line += `,"${ticket.Name || ''}","${ticket.AVB_Status__c || ''}","${ticket.AVB_Priority__c || ''}","${ticket.AVB_Fix_Versions__c || ''}","${ticket.AVB_Assignee__c || ''}","${ticket.AVB_Reporter__c || ''}","${this.formatDate(ticket.AVB_Due_Date__c) || ''}","${ticket.AVB_Customers__c || ''}","${ticket.AVB_Base_Cloud_Tools_Environment__c || ''}"`;
+                                let val = ticket[f.apiName];
+                                if (f.apiName.includes('Date')) val = this.formatDate(val);
+                                line += `,"${val || ''}"`;
                             } else {
-                                line += ',,,,,,,,,';
+                                line += ',""';
                             }
                         } else {
                             let k = f.apiName.includes('.') ? f.apiName.replaceAll('.', DOT_SEP) : f.apiName; 
