@@ -101,7 +101,7 @@ public with sharing class MiniDashboardController {
         
         List<String> fieldList = new List<String>(fieldSet);
         if (includeJira) {
-            fieldList.add('(SELECT Name, AVB_Status__c, AVB_Priority__c, AVB_Fix_Versions__c FROM Jira_Tickets__r)');
+            fieldList.add('(SELECT Name, AVB_Status__c, AVB_Priority__c, AVB_Fix_Versions__c, AVB_Assignee__c, AVB_Reporter__c, AVB_Due_Date__c, AVB_Customers__c, AVB_Base_Cloud_Tools_Environment__c FROM Jira_Tickets__r)');
         }
         
         String fieldString = String.join(fieldList, ', ');

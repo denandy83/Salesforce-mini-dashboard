@@ -149,3 +149,31 @@ td {
 .jira-item-odd {
     background-color: #ffffff;
 }
+
+/* Custom Checkbox for Table */
+.custom-checkbox {
+    width: 14px;
+    height: 14px;
+    border: 1.5px solid #000;
+    border-radius: 2px;
+    background: #fff;
+    position: relative;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+.custom-checkbox.checked {
+    background: #000;
+}
+
+.custom-checkbox.checked::after {
+    content: '';
+    position: absolute;
+    top: 0px;
+    left: 4px;
+    width: 4px;
+    height: 8px;
+    border: solid #fff;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
