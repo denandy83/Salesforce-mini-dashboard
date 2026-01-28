@@ -111,6 +111,11 @@
                     </div>
                 </header>
                 <div class="slds-modal_content slds-p-around_none modal-content-area" onscroll={handleTableScroll}>
+                    <template lwc:if={isSearching}>
+                        <div class="table-loading-overlay">
+                            <lightning-spinner alternative-text="Searching..." size="small"></lightning-spinner>
+                        </div>
+                    </template>
                     <table class="slds-table slds-table_bordered slds-table_fixed-layout">
                         <thead>
                             <tr class="slds-line-height_reset">
@@ -147,51 +152,49 @@
                                         </td>
                                     </template>
                                 </tr>
-                                <template lwc:if={row.hasJiraDetails}>
-                                    <tr key={row.jiraKey} class="jira-detail-row">
-                                        <td colspan="100">
-                                            <div class="slds-p-around_small" style="background-color: #f8f9fb; border-left: 4px solid #0070d2;">
-                                                <ul class="slds-list_vertical">
-                                                    <template for:each={row.jiraDetails} for:item="jira">
-                                                        <li key={jira.id} class={jira.itemClass}>
-                                                            <div class="slds-grid slds-wrap slds-p-vertical_xx-small slds-p-horizontal_small">
-                                                                <div class="slds-col slds-size_2-of-12">
-                                                                    <a href={jira.url} target="_blank" class="slds-text-link_reset slds-text-link">
-                                                                        <strong>{jira.name}</strong>
-                                                                    </a>
-                                                                </div>
-                                                                <div class="slds-col slds-size_2-of-12">
-                                                                    <span class="slds-text-color_weak">Status:</span> {jira.status}
-                                                                </div>
-                                                                <div class="slds-col slds-size_2-of-12">
-                                                                    <span class="slds-text-color_weak">Priority:</span> {jira.priority}
-                                                                </div>
-                                                                <div class="slds-col slds-size_3-of-12">
-                                                                    <span class="slds-text-color_weak">Fix Version:</span> {jira.fixVersion}
-                                                                </div>
-                                                                <div class="slds-col slds-size_3-of-12">
-                                                                    <span class="slds-text-color_weak">Assignee:</span> {jira.assignee}
-                                                                </div>
-                                                                <div class="slds-col slds-size_2-of-12">
-                                                                    <span class="slds-text-color_weak">Reporter:</span> {jira.reporter}
-                                                                </div>
-                                                                <div class="slds-col slds-size_2-of-12">
-                                                                    <span class="slds-text-color_weak">Due Date:</span> {jira.dueDate}
-                                                                </div>
-                                                                <div class="slds-col slds-size_2-of-12">
-                                                                    <span class="slds-text-color_weak">Customers:</span> {jira.customers}
-                                                                </div>
-                                                                <div class="slds-col slds-size_3-of-12">
-                                                                    <span class="slds-text-color_weak">Env:</span> {jira.environment}
-                                                                </div>
+                                <tr key={row.jiraKey} lwc:if={row.hasJiraDetails} class="jira-detail-row">
+                                    <td colspan="100">
+                                        <div class="slds-p-around_small jira-detail-container">
+                                            <ul class="slds-list_vertical">
+                                                <template for:each={row.jiraDetails} for:item="jira">
+                                                    <li key={jira.id} class={jira.itemClass}>
+                                                        <div class="slds-grid slds-wrap slds-p-vertical_xx-small slds-p-horizontal_small">
+                                                            <div class="slds-col slds-size_2-of-12">
+                                                                <a href={jira.url} target="_blank" class="slds-text-link_reset slds-text-link">
+                                                                    <strong>{jira.name}</strong>
+                                                                </a>
                                                             </div>
-                                                        </li>
-                                                    </template>
-                                                </ul>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                </template>
+                                                            <div class="slds-col slds-size_2-of-12">
+                                                                <span class="slds-text-color_weak">Status:</span> {jira.status}
+                                                            </div>
+                                                            <div class="slds-col slds-size_2-of-12">
+                                                                <span class="slds-text-color_weak">Priority:</span> {jira.priority}
+                                                            </div>
+                                                            <div class="slds-col slds-size_3-of-12">
+                                                                <span class="slds-text-color_weak">Fix Version:</span> {jira.fixVersion}
+                                                            </div>
+                                                            <div class="slds-col slds-size_3-of-12">
+                                                                <span class="slds-text-color_weak">Assignee:</span> {jira.assignee}
+                                                            </div>
+                                                            <div class="slds-col slds-size_2-of-12">
+                                                                <span class="slds-text-color_weak">Reporter:</span> {jira.reporter}
+                                                            </div>
+                                                            <div class="slds-col slds-size_2-of-12">
+                                                                <span class="slds-text-color_weak">Due Date:</span> {jira.dueDate}
+                                                            </div>
+                                                            <div class="slds-col slds-size_2-of-12">
+                                                                <span class="slds-text-color_weak">Customers:</span> {jira.customers}
+                                                            </div>
+                                                            <div class="slds-col slds-size_3-of-12">
+                                                                <span class="slds-text-color_weak">Env:</span> {jira.environment}
+                                                            </div>
+                                                        </div>
+                                                    </li>
+                                                </template>
+                                            </ul>
+                                        </div>
+                                    </td>
+                                </tr>
                             </template>
                         </tbody>
                     </table>

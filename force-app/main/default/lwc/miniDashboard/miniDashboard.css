@@ -118,6 +118,29 @@ tr.priority-low    { background-color: rgba(144, 164, 174, 0.1); }
     height: 60vh;
     overflow-y: auto !important;
     display: block;
+    position: relative; /* For loading overlay */
+}
+
+.table-loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.6);
+    z-index: 100;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.jira-detail-row {
+    background-color: #f8f9fb;
+}
+
+.jira-detail-container {
+    background-color: #f8f9fb; 
+    border-left: 4px solid #0070d2;
 }
 
 .footer-text {

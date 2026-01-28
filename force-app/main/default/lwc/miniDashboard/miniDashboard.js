@@ -109,6 +109,7 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
     currentAccountId;
     currentOnlyMine = false;
     isFirstModalLoad = false;
+    lastRequestId = 0;
 
     // Advanced search properties
     searchTimeout;
@@ -336,6 +337,8 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
     }
 
     loadModalData() {
+        const requestId = ++this.lastRequestId;
+        const currentOffset = this.offset;
         const cleanFields = this.columnFields.split(',').map(f => f.trim().split(':')[0].trim());
         
         // Ensure Status field is retrieved for ALL view (case-insensitive check)
@@ -353,7 +356,7 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
              return true;
         });
 
-        if (this.offset === 0) {
+        if (currentOffset === 0) {
             if (this.isFirstModalLoad) { this.isLoadingModal = true; this.isFirstModalLoad = false; } 
             else { this.isSearching = true; }
         } else {
@@ -363,12 +366,14 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
         getCaseList({
             dashboardId: this.currentDashboardId, accountId: this.currentAccountId, fields: finalFields,
             sortField: this.sortedBy.replaceAll(DOT_SEP, '.'), sortOrder: this.sortedDirection,
-            searchTerm: this.searchTerm, offset: this.offset, onlyMine: this.currentOnlyMine,
+            searchTerm: this.searchTerm, offset: currentOffset, onlyMine: this.currentOnlyMine,
             priorityFilter: this.priorityFilter, limitCount: this.limit,
             advancedField: this.advancedField, advancedValue: this.advancedValue,
             hasJira: this.hasJiraFilter, statusFilter: this.statusFilter, unresponsiveFilter: this.unresponsiveFilter
         })
         .then(data => {
+            if (requestId !== this.lastRequestId) return;
+            
             const flattened = this.flattenData(data).map(c => {
                 let rowClass = 'table-row';
                 if (c.Priority === 'Urgent') rowClass += ' priority-urgent';
@@ -428,11 +433,19 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
                     jiraKey: c.Id + '-jira'
                 };
             });
-            this.modalData = this.offset === 0 ? flattened : [...this.modalData, ...flattened];
+            this.modalData = currentOffset === 0 ? flattened : [...this.modalData, ...flattened];
             this.isMoreDataAvailable = data.length === this.limit;
         })
-        .catch(error => this.handleError('Error loading cases', error))
-        .finally(() => { this.isLoadingModal = false; this.isLoadingMore = false; this.isSearching = false; });
+        .catch(error => {
+            if (requestId === this.lastRequestId) this.handleError('Error loading cases', error);
+        })
+        .finally(() => { 
+            if (requestId === this.lastRequestId) {
+                this.isLoadingModal = false; 
+                this.isLoadingMore = false; 
+                this.isSearching = false; 
+            }
+        });
     }
 
     flattenData(data) {
