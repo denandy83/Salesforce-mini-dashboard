@@ -306,6 +306,24 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
                 else if (c.Priority === 'Normal') rowClass += ' priority-normal';
                 else if (c.Priority === 'Low') rowClass += ' priority-low';
 
+                // Process Jira Details for nested row
+                let jiraDetails = [];
+                if (this.hasJiraFilter && c['Jira_Tickets__r']) {
+                    const jiraData = c['Jira_Tickets__r'];
+                    const tickets = Array.isArray(jiraData) ? jiraData : (jiraData ? jiraData.records : null);
+                    if (tickets) {
+                        jiraDetails = tickets.map((j, index) => ({
+                            id: j.Id,
+                            name: j.Name,
+                            url: `https://aviobook.atlassian.net/browse/${j.Name}`,
+                            status: j.AVB_Status__c || '-',
+                            priority: j.AVB_Priority__c || '-',
+                            fixVersion: j.AVB_Fix_Versions__c || '-',
+                            itemClass: index % 2 === 0 ? 'jira-item-even' : 'jira-item-odd'
+                        }));
+                    }
+                }
+
                 const cells = this.columns.map(col => {
                     const recordValue = c[col.fieldName];
                     let displayValue = recordValue;
@@ -319,7 +337,13 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
                     }
                     return { key: col.fieldName, value: displayValue, isUrl: col.type === 'button', isJira: isJira };
                 });
-                return { ...c, rowClass: rowClass, cells: cells };
+                return { 
+                    ...c, 
+                    rowClass: rowClass, 
+                    cells: cells,
+                    hasJiraDetails: jiraDetails.length > 0,
+                    jiraDetails: jiraDetails
+                };
             });
             this.modalData = this.offset === 0 ? flattened : [...this.modalData, ...flattened];
             this.isMoreDataAvailable = data.length === this.limit;
@@ -455,7 +479,7 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
         const apiNames = selectedFields.map(f => f.apiName);
         this.closeExportModal();
         try {
-            const data = await getCaseList({
+            const data = await getCaseList({ 
                 dashboardId: this.currentDashboardId, accountId: this.currentAccountId, fields: apiNames, limitCount: 1000,
                 searchTerm: this.searchTerm, priorityFilter: this.priorityFilter, onlyMine: this.currentOnlyMine,
                 sortField: this.sortedBy.replaceAll(DOT_SEP, '.'), sortOrder: this.sortedDirection,
@@ -463,24 +487,47 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
                 statusFilter: this.statusFilter
             });
             const flattened = this.flattenData(data);
-            const headerLabels = selectedFields.map(f => f.label);
-            let csv = 'Case Number,Link,' + headerLabels.join(',') + '\n';
-            flattened.forEach(row => {
-                let line = `${row.CaseNumber},${window.location.origin}/lightning/r/Case/${row.Id}/view`;
-                selectedFields.forEach(f => { 
-                    let val = '';
-                    if (f.apiName.toLowerCase() === 'jira') {
-                        const jiraData = row['Jira_Tickets__r'];
-                        const tickets = Array.isArray(jiraData) ? jiraData : (jiraData ? jiraData.records : null);
-                        val = tickets ? tickets.map(j => j.Name).join(', ') : '';
-                    } else {
-                        let k = f.apiName.includes('.') ? f.apiName.replaceAll('.', DOT_SEP) : f.apiName; 
-                        val = row[k] || '';
-                    }
-                    line += ',"'+ String(val).replace(/"/g, '""') + '"'; 
-                });
-                csv += line + '\n';
+            
+            // Build Header Row
+            let headerRow = 'Case Number,Link';
+            selectedFields.forEach(f => {
+                if (f.apiName.toLowerCase() === 'jira') {
+                    headerRow += ',Jira Key,Jira Status,Jira Priority,Jira Fix Version';
+                } else {
+                    headerRow += `,"${f.label}"`;
+                }
             });
+            let csv = headerRow + '\n';
+            
+            flattened.forEach(row => {
+                const caseLink = `${window.location.origin}/lightning/r/Case/${row.Id}/view`;
+                const baseLinePart1 = `${row.CaseNumber},${caseLink}`;
+                
+                // Check if we need to expand rows for Jira
+                const jiraField = selectedFields.find(f => f.apiName.toLowerCase() === 'jira');
+                const jiraData = row['Jira_Tickets__r'];
+                const tickets = jiraField && Array.isArray(jiraData) ? jiraData : (jiraData ? jiraData.records : []);
+                
+                const rowsToOutput = (tickets && tickets.length > 0) ? tickets : [null];
+
+                rowsToOutput.forEach(ticket => {
+                    let line = baseLinePart1;
+                    selectedFields.forEach(f => { 
+                        if (f.apiName.toLowerCase() === 'jira') {
+                            if (ticket) {
+                                line += `,"${ticket.Name || ''}","${ticket.AVB_Status__c || ''}","${ticket.AVB_Priority__c || ''}","${ticket.AVB_Fix_Versions__c || ''}"`;
+                            } else {
+                                line += ',,,,';
+                            }
+                        } else {
+                            let k = f.apiName.includes('.') ? f.apiName.replaceAll('.', DOT_SEP) : f.apiName; 
+                            line += ',"'+ String(row[k] || '').replace(/"/g, '""') + '"'; 
+                        }
+                    });
+                    csv += line + '\n';
+                });
+            });
+            
             const link = document.createElement('a');
             link.href = 'data:text/csv;base64,' + window.btoa(unescape(encodeURIComponent(csv)));
             link.download = 'Export.csv';

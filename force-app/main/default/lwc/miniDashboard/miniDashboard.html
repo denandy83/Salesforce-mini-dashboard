@@ -115,6 +115,36 @@
                                         </td>
                                     </template>
                                 </tr>
+                                <template lwc:if={row.hasJiraDetails}>
+                                    <tr key={row.Id} class="jira-detail-row">
+                                        <td colspan="100">
+                                            <div class="slds-p-around_small" style="background-color: #f8f9fb; border-left: 4px solid #0070d2;">
+                                                <ul class="slds-list_vertical">
+                                                    <template for:each={row.jiraDetails} for:item="jira">
+                                                        <li key={jira.id} class={jira.itemClass}>
+                                                            <div class="slds-grid slds-gutters slds-p-vertical_xx-small slds-p-horizontal_small">
+                                                                <div class="slds-col slds-size_2-of-12">
+                                                                    <a href={jira.url} target="_blank" class="slds-text-link_reset slds-text-link">
+                                                                        <strong>{jira.name}</strong>
+                                                                    </a>
+                                                                </div>
+                                                                <div class="slds-col slds-size_3-of-12">
+                                                                    <span class="slds-text-color_weak">Status:</span> {jira.status}
+                                                                </div>
+                                                                <div class="slds-col slds-size_3-of-12">
+                                                                    <span class="slds-text-color_weak">Priority:</span> {jira.priority}
+                                                                </div>
+                                                                <div class="slds-col slds-size_4-of-12">
+                                                                    <span class="slds-text-color_weak">Fix Version:</span> {jira.fixVersion}
+                                                                </div>
+                                                            </div>
+                                                        </li>
+                                                    </template>
+                                                </ul>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </template>
                             </template>
                         </tbody>
                     </table>
