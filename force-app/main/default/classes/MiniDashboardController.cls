@@ -79,7 +79,7 @@ public with sharing class MiniDashboardController {
     }
 
     @AuraEnabled
-    public static List<Case> getCaseList(String dashboardId, Id accountId, List<String> fields, String sortField, String sortOrder, String searchTerm, Integer offset, String advancedField, String advancedValue, Boolean onlyMine, Integer limitCount, List<String> priorityFilter, Boolean hasJira, List<String> statusFilter) {
+    public static List<Case> getCaseList(String dashboardId, Id accountId, List<String> fields, String sortField, String sortOrder, String searchTerm, Integer offset, String advancedField, String advancedValue, Boolean onlyMine, Integer limitCount, List<String> priorityFilter, Boolean hasJira, List<String> statusFilter, List<String> unresponsiveFilter) {
         List<String> statuses = (statusFilter != null && !statusFilter.isEmpty()) ? statusFilter : statusMap.get(dashboardId);
         if (statuses == null) return new List<Case>();
 
@@ -115,6 +115,15 @@ public with sharing class MiniDashboardController {
 
         if (priorityFilter != null && !priorityFilter.isEmpty()) {
             query += ' AND Priority IN :priorityFilter';
+        }
+
+        if (unresponsiveFilter != null && !unresponsiveFilter.isEmpty()) {
+            // If both True and False are selected, we don't filter (show all).
+            // If only one is selected, filter by that boolean value.
+            if (unresponsiveFilter.size() == 1) {
+                Boolean val = Boolean.valueOf(unresponsiveFilter[0]);
+                query += ' AND AVB_Warn_Unresponsive_Customer__c = :val';
+            }
         }
 
         if (hasJira == true) {

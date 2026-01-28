@@ -89,6 +89,7 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
     @track priorityFilter = [];
     @track hasJiraFilter = false;
     @track statusFilter = [];
+    @track unresponsiveFilter = [];
     
     isLoadingModal = false;
     isLoadingMore = false;
@@ -160,6 +161,9 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
     get statusWaitingVariant() { return this.statusFilter.includes('Waiting for Customer') ? 'brand' : 'neutral'; }
     get statusHoldVariant() { return this.statusFilter.includes('On Hold') ? 'brand' : 'neutral'; }
     get statusSolvedVariant() { return this.statusFilter.includes('Solved') ? 'brand' : 'neutral'; }
+
+    get unresponsiveTrueVariant() { return this.unresponsiveFilter.includes('true') ? 'brand' : 'neutral'; }
+    get unresponsiveFalseVariant() { return this.unresponsiveFilter.includes('false') ? 'brand' : 'neutral'; }
 
     connectedCallback() {
         this.fetchData();
@@ -243,6 +247,7 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
         // Reset filters when opening KPI
         this.statusFilter = [];
         this.priorityFilter = [];
+        this.unresponsiveFilter = [];
 
         this.modalData = []; this.offset = 0; this.isModalOpen = true; this.isFirstModalLoad = true;
         this.buildColumns(); this.loadModalData();
@@ -361,7 +366,7 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
             searchTerm: this.searchTerm, offset: this.offset, onlyMine: this.currentOnlyMine,
             priorityFilter: this.priorityFilter, limitCount: this.limit,
             advancedField: this.advancedField, advancedValue: this.advancedValue,
-            hasJira: this.hasJiraFilter, statusFilter: this.statusFilter
+            hasJira: this.hasJiraFilter, statusFilter: this.statusFilter, unresponsiveFilter: this.unresponsiveFilter
         })
         .then(data => {
             const flattened = this.flattenData(data).map(c => {
@@ -486,6 +491,19 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
     }
     
     handleHasJiraToggle() { this.hasJiraFilter = !this.hasJiraFilter; this.offset = 0; this.loadModalData(); }
+
+    handleUnresponsiveToggle(event) {
+        const val = event.target.value;
+        let newFilter = [...this.unresponsiveFilter];
+        if (newFilter.includes(val)) {
+            newFilter = newFilter.filter(v => v !== val);
+        } else {
+            newFilter.push(val);
+        }
+        this.unresponsiveFilter = newFilter;
+        this.offset = 0;
+        this.loadModalData();
+    }
     
     handleStatusToggle(event) {
         const status = event.target.value;
@@ -599,7 +617,7 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
                 searchTerm: this.searchTerm, priorityFilter: this.priorityFilter, onlyMine: this.currentOnlyMine,
                 sortField: this.sortedBy.replaceAll(DOT_SEP, '.'), sortOrder: this.sortedDirection,
                 advancedField: this.advancedField, advancedValue: this.advancedValue, hasJira: this.hasJiraFilter,
-                statusFilter: this.statusFilter
+                statusFilter: this.statusFilter, unresponsiveFilter: this.unresponsiveFilter
             });
             const flattened = this.flattenData(data);
             

@@ -64,24 +64,47 @@
                             <lightning-input type="search" placeholder={searchPlaceholder} onchange={handleSearch} variant="label-hidden" is-loading={isSearching}></lightning-input>
                         </div>
                         <div class="slds-col slds-text-align_left slds-m-bottom_small">
-                            <div class="slds-grid slds-grid_vertical-align-center slds-wrap">
-                                <lightning-button-group class="slds-m-right_small">
-                                    <lightning-button label="Urgent" value="Urgent" variant={priorityFilterUrgent} onclick={handlePriorityQuickFilter}></lightning-button>
-                                    <lightning-button label="High" value="High" variant={priorityFilterHigh} onclick={handlePriorityQuickFilter}></lightning-button>
-                                    <lightning-button label="Normal" value="Normal" variant={priorityFilterNormal} onclick={handlePriorityQuickFilter}></lightning-button>
-                                    <lightning-button label="Low" value="Low" variant={priorityFilterLow} onclick={handlePriorityQuickFilter}></lightning-button>
-                                </lightning-button-group>
-                                
-                                <lightning-button label="Has Jira" variant={hasJiraBtnVariant} onclick={handleHasJiraToggle} class="slds-m-right_small"></lightning-button>
-
-                                <template lwc:if={showStatusFilter}>
+                            <div class="slds-grid slds-grid_vertical-align-bottom slds-wrap">
+                                <!-- Priority Filter -->
+                                <div class="slds-m-right_small filter-group">
+                                    <div class="filter-title slds-text-title_bold slds-m-bottom_xx-small">Priority</div>
                                     <lightning-button-group>
-                                        <lightning-button label="New" value="New" variant={statusNewVariant} onclick={handleStatusToggle}></lightning-button>
-                                        <lightning-button label="Open" value="Open" variant={statusOpenVariant} onclick={handleStatusToggle}></lightning-button>
-                                        <lightning-button label="Waiting" value="Waiting" variant={statusWaitingVariant} onclick={handleStatusToggle}></lightning-button>
-                                        <lightning-button label="On Hold" value="On-Hold" variant={statusHoldVariant} onclick={handleStatusToggle}></lightning-button>
-                                        <lightning-button label="Solved" value="Solved" variant={statusSolvedVariant} onclick={handleStatusToggle}></lightning-button>
+                                        <lightning-button label="Urgent" value="Urgent" variant={priorityFilterUrgent} onclick={handlePriorityQuickFilter}></lightning-button>
+                                        <lightning-button label="High" value="High" variant={priorityFilterHigh} onclick={handlePriorityQuickFilter}></lightning-button>
+                                        <lightning-button label="Normal" value="Normal" variant={priorityFilterNormal} onclick={handlePriorityQuickFilter}></lightning-button>
+                                        <lightning-button label="Low" value="Low" variant={priorityFilterLow} onclick={handlePriorityQuickFilter}></lightning-button>
                                     </lightning-button-group>
+                                </div>
+                                
+                                <!-- Has Jira Toggle -->
+                                <div class="slds-m-right_small filter-group">
+                                    <div class="filter-title slds-text-title_bold slds-m-bottom_xx-small">Has Jira</div>
+                                    <lightning-button label="True" variant={hasJiraBtnVariant} onclick={handleHasJiraToggle}></lightning-button>
+                                </div>
+
+                                <!-- Status Filter -->
+                                <template lwc:if={showStatusFilter}>
+                                    <div class="slds-m-right_small filter-group">
+                                        <div class="filter-title slds-text-title_bold slds-m-bottom_xx-small">Status</div>
+                                        <lightning-button-group>
+                                            <lightning-button label="New" value="New" variant={statusNewVariant} onclick={handleStatusToggle}></lightning-button>
+                                            <lightning-button label="Open" value="Open" variant={statusOpenVariant} onclick={handleStatusToggle}></lightning-button>
+                                            <lightning-button label="Waiting" value="Waiting" variant={statusWaitingVariant} onclick={handleStatusToggle}></lightning-button>
+                                            <lightning-button label="On Hold" value="On-Hold" variant={statusHoldVariant} onclick={handleStatusToggle}></lightning-button>
+                                            <lightning-button label="Solved" value="Solved" variant={statusSolvedVariant} onclick={handleStatusToggle}></lightning-button>
+                                        </lightning-button-group>
+                                    </div>
+                                </template>
+
+                                <!-- Unresponsive Filter -->
+                                <template lwc:if={shouldShowWarnField}>
+                                    <div class="filter-group">
+                                        <div class="filter-title slds-text-title_bold slds-m-bottom_xx-small">Unresponsive?</div>
+                                        <lightning-button-group>
+                                            <lightning-button label="True" value="true" variant={unresponsiveTrueVariant} onclick={handleUnresponsiveToggle}></lightning-button>
+                                            <lightning-button label="False" value="false" variant={unresponsiveFalseVariant} onclick={handleUnresponsiveToggle}></lightning-button>
+                                        </lightning-button-group>
+                                    </div>
                                 </template>
                             </div>
                         </div>

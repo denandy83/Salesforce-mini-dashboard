@@ -177,3 +177,33 @@ td {
     border-width: 0 2px 2px 0;
     transform: rotate(45deg);
 }
+
+/* New Styles for Filters and Search */
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.filter-title {
+    color: #444;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    text-align: center;
+    width: 100%;
+}
+
+.slds-modal_header {
+    background-color: white !important;
+    border-bottom: 1px solid #dddbda;
+}
+
+.slds-modal_container {
+    background-color: white;
+}
+
+/* Force white background on search input if needed */
+lightning-input {
+    --slds-c-input-color-background: white;
+}
