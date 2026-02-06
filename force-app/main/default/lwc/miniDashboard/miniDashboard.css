@@ -53,6 +53,9 @@
 
 /* The Color Bar on top from pics/1.png */
 th {
+    position: sticky;
+    top: 0;
+    z-index: 100; 
     background-color: #f8f9fb !important;
     font-weight: bold;
     color: #514f6d;
@@ -65,10 +68,10 @@ th.is-sorted {
     border-bottom: 2px solid #0070d2;
 }
 
-tr.priority-urgent { background-color: rgba(229, 115, 115, 0.1); }
-tr.priority-high   { background-color: rgba(255, 183, 77, 0.1); }
-tr.priority-normal { background-color: rgba(129, 199, 132, 0.1); }
-tr.priority-low    { background-color: rgba(144, 164, 174, 0.1); }
+tr.priority-urgent { background-color: rgba(229, 115, 115, 0.3); }
+tr.priority-high   { background-color: rgba(255, 183, 77, 0.3); }
+tr.priority-normal { background-color: rgba(129, 199, 132, 0.3); }
+tr.priority-low    { background-color: rgba(144, 164, 174, 0.3); }
 
 .count-bar {
     height: 6px;
@@ -81,7 +84,7 @@ tr.priority-low    { background-color: rgba(144, 164, 174, 0.1); }
 .count-label {
     font-size: 0.65rem;
     font-weight: 800;
-    color: #aaa;
+    color: #888;
     text-transform: uppercase;
     margin-top: 6px;
     margin-bottom: 2px;

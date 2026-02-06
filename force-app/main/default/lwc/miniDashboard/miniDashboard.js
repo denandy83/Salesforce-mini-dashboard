@@ -232,23 +232,39 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
             const color = isOverThreshold ? this.thresholdColor : this.normalColor;
             let bgColor = 'transparent';
             if (summary.count > 0) {
-                if (summary.priorityMap['Urgent'] > 0) bgColor = 'rgba(229, 115, 115, 0.15)'; 
-                else if (summary.priorityMap['High'] > 0) bgColor = 'rgba(255, 183, 77, 0.2)';  
-                else bgColor = 'rgba(129, 199, 132, 0.15)'; 
+                if (summary.priorityMap['Urgent'] > 0) bgColor = 'rgba(229, 115, 115, 0.30)'; 
+                else if (summary.priorityMap['High'] > 0) bgColor = 'rgba(255, 183, 77, 0.30)';  
+                else bgColor = 'rgba(129, 199, 132, 0.30)'; 
             }
             return { ...item, count: summary.count, tooltip: summary.priorityTooltip, barStyle: `background-color: ${item.barColor}`, itemStyle: `color: ${color}`, heatmapStyle: `background-color: ${bgColor}` };
         });
     }
 
     handleItemClick(event) {
-        this.currentDashboardId = event.currentTarget.dataset.id;
-        this.currentAccountId = event.currentTarget.dataset.scope === 'account' ? this.accountId : null;
-        this.currentOnlyMine = event.currentTarget.dataset.scope === 'my';
+        const newDashboardId = event.currentTarget.dataset.id;
+        const newAccountId = event.currentTarget.dataset.scope === 'account' ? this.accountId : null;
+        const newOnlyMine = event.currentTarget.dataset.scope === 'my';
         
-        // Reset only search-related filters when opening KPI
-        this.searchTerm = '';
-        this.advancedField = '';
-        this.advancedValue = '';
+        // Check if we are opening the exact same KPI context
+        const isSameContext = 
+            this.currentDashboardId === newDashboardId && 
+            this.currentAccountId === newAccountId && 
+            this.currentOnlyMine === newOnlyMine;
+
+        this.currentDashboardId = newDashboardId;
+        this.currentAccountId = newAccountId;
+        this.currentOnlyMine = newOnlyMine;
+
+        if (!isSameContext) {
+            // Context changed: Reset all filters
+            this.searchTerm = '';
+            this.advancedField = '';
+            this.advancedValue = '';
+            this.priorityFilter = [];
+            this.hasJiraFilter = false;
+            this.statusFilter = [];
+            this.unresponsiveFilter = [];
+        }
 
         this.modalData = []; this.offset = 0; this.isModalOpen = true; this.isFirstModalLoad = true;
         this.buildColumns(); this.loadModalData();
