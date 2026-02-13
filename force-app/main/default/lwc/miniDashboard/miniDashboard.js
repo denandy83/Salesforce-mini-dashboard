@@ -180,6 +180,21 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
                 } 
             }); 
         }
+        this._keydownHandler = (event) => {
+            if (event.key === 'Escape' || event.key === 'Esc') {
+                if (this.isExportModalOpen) {
+                    this.closeExportModal();
+                } else if (this.isModalOpen) {
+                    this.closeModal();
+                }
+            }
+        };
+        window.addEventListener('keydown', this._keydownHandler);
+    }
+
+    disconnectedCallback() {
+        window.removeEventListener('keydown', this._keydownHandler);
+        this.stopPolling();
     }
 
     startPolling() { 
