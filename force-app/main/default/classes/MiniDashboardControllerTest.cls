@@ -32,21 +32,21 @@ public class MiniDashboardControllerTest {
         insert c;
 
         Test.startTest();
-        // Signature: (String dashboardId, Id accountId, List<String> fields, String sortField, String sortOrder, String searchTerm, Integer offset, String advancedField, String advancedValue, Boolean onlyMine, Integer limitCount, List<String> priorityFilter, Boolean hasJira, List<String> statusFilter, List<String> unresponsiveFilter)
-        List<Case> smart = MiniDashboardController.getCaseList('New', acc.Id, new List<String>{'Subject'}, 'Subject', 'ASC', null, 0, 'Priority', 'High', false, 20, new List<String>{'High'}, false, null, null);
+        // Signature: (String dashboardId, Id accountId, List<String> fields, String sortField, String sortOrder, String searchTerm, Integer offset, String advancedField, String advancedValue, Boolean onlyMine, Integer limitCount, List<String> priorityFilter, Boolean hasJira, List<String> statusFilter, List<String> unresponsiveFilter, List<String> regionNames)
+        List<Case> smart = MiniDashboardController.getCaseList('New', acc.Id, new List<String>{'Subject'}, 'Subject', 'ASC', null, 0, 'Priority', 'High', false, 20, new List<String>{'High'}, false, null, null, null);
         System.assertEquals(1, smart.size());
 
-        List<Case> search = MiniDashboardController.getCaseList('New', null, new List<String>{'Subject'}, 'Subject', 'DESC', 'Specific', 0, null, null, false, 20, null, false, null, null);
+        List<Case> search = MiniDashboardController.getCaseList('New', null, new List<String>{'Subject'}, 'Subject', 'DESC', 'Specific', 0, null, null, false, 20, null, false, null, null, null);
         System.assertEquals(1, search.size());
 
-        List<Case> empty = MiniDashboardController.getCaseList('Invalid', null, null, null, null, null, 0, null, null, false, 20, null, false, null, null);
+        List<Case> empty = MiniDashboardController.getCaseList('Invalid', null, null, null, null, null, 0, null, null, false, 20, null, false, null, null, null);
         System.assertEquals(0, empty.size());
         
-        List<Case> multiStatus = MiniDashboardController.getCaseList('ALL', null, new List<String>{'Subject'}, null, null, null, 0, null, null, false, 20, null, false, new List<String>{'New', 'Open'}, null);
+        List<Case> multiStatus = MiniDashboardController.getCaseList('ALL', null, new List<String>{'Subject'}, null, null, null, 0, null, null, false, 20, null, false, new List<String>{'New', 'Open'}, null, null);
         System.assertEquals(1, multiStatus.size());
 
         try {
-            MiniDashboardController.getCaseList('New', null, new List<String>{'Subject'}, 'Subject; DELETE FROM Case', 'ASC', null, 0, null, null, false, 20, null, false, null, null);
+            MiniDashboardController.getCaseList('New', null, new List<String>{'Subject'}, 'Subject; DELETE FROM Case', 'ASC', null, 0, null, null, false, 20, null, false, null, null, null);
         } catch (Exception e) {}
         Test.stopTest();
     }
