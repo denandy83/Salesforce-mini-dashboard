@@ -98,11 +98,23 @@
 
                                 <!-- Unresponsive Filter -->
                                 <template lwc:if={shouldShowWarnField}>
-                                    <div class="filter-group">
+                                    <div class="slds-m-right_small filter-group">
                                         <div class="filter-title slds-text-title_bold slds-m-bottom_xx-small">Unresponsive?</div>
                                         <lightning-button-group>
                                             <lightning-button label="True" value="true" variant={unresponsiveTrueVariant} onclick={handleUnresponsiveToggle}></lightning-button>
                                             <lightning-button label="False" value="false" variant={unresponsiveFalseVariant} onclick={handleUnresponsiveToggle}></lightning-button>
+                                        </lightning-button-group>
+                                    </div>
+                                </template>
+
+                                <!-- Region Filter -->
+                                <template lwc:if={showRegionFilter}>
+                                    <div class="filter-group">
+                                        <div class="filter-title slds-text-title_bold slds-m-bottom_xx-small">Region</div>
+                                        <lightning-button-group>
+                                            <lightning-button label="BE" value="BE" variant={regionBEVariant} onclick={handleRegionToggle}></lightning-button>
+                                            <lightning-button label="US" value="US" variant={regionUSVariant} onclick={handleRegionToggle}></lightning-button>
+                                            <lightning-button label="SG" value="SG" variant={regionSGVariant} onclick={handleRegionToggle}></lightning-button>
                                         </lightning-button-group>
                                     </div>
                                 </template>

@@ -72,6 +72,10 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
     @api thresholdColor = '#ff0000';
     @api normalColor = '#000000';
 
+    @api beFilterNames = '';
+    @api usFilterNames = '';
+    @api sgFilterNames = '';
+
     @track totalItems = this.initItems();
     @track myItems = this.initItems();
     @track accountItems = this.initItems();
@@ -90,6 +94,7 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
     @track hasJiraFilter = false;
     @track statusFilter = [];
     @track unresponsiveFilter = [];
+    @track regionFilter = [];
     
     isLoadingModal = false;
     isLoadingMore = false;
@@ -122,6 +127,28 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
 
     get searchPlaceholder() {
         return `Filter ${this.modalData.length}${this.isMoreDataAvailable ? '+' : ''} cases...`;
+    }
+
+    get showRegionFilter() {
+        return !this.currentOnlyMine;
+    }
+
+    get regionBEVariant() { return this.regionFilter.includes('BE') ? 'brand' : 'neutral'; }
+    get regionUSVariant() { return this.regionFilter.includes('US') ? 'brand' : 'neutral'; }
+    get regionSGVariant() { return this.regionFilter.includes('SG') ? 'brand' : 'neutral'; }
+
+    get selectedRegionNames() {
+        let names = [];
+        if (this.regionFilter.includes('BE') && this.beFilterNames) {
+            names = [...names, ...this.beFilterNames.split(',').map(n => n.trim())];
+        }
+        if (this.regionFilter.includes('US') && this.usFilterNames) {
+            names = [...names, ...this.usFilterNames.split(',').map(n => n.trim())];
+        }
+        if (this.regionFilter.includes('SG') && this.sgFilterNames) {
+            names = [...names, ...this.sgFilterNames.split(',').map(n => n.trim())];
+        }
+        return names.filter(n => n);
     }
 
     initItems() {
@@ -279,10 +306,24 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
             this.hasJiraFilter = false;
             this.statusFilter = [];
             this.unresponsiveFilter = [];
+            this.regionFilter = [];
         }
 
         this.modalData = []; this.offset = 0; this.isModalOpen = true; this.isFirstModalLoad = true;
         this.buildColumns(); this.loadModalData();
+    }
+
+    handleRegionToggle(event) {
+        const val = event.target.value;
+        let newFilter = [...this.regionFilter];
+        if (newFilter.includes(val)) {
+            newFilter = newFilter.filter(v => v !== val);
+        } else {
+            newFilter.push(val);
+        }
+        this.regionFilter = newFilter;
+        this.offset = 0;
+        this.loadModalData();
     }
 
     buildColumns() {
@@ -400,7 +441,8 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
             searchTerm: this.searchTerm, offset: currentOffset, onlyMine: this.currentOnlyMine,
             priorityFilter: this.priorityFilter, limitCount: this.limit,
             advancedField: this.advancedField, advancedValue: this.advancedValue,
-            hasJira: this.hasJiraFilter, statusFilter: this.statusFilter, unresponsiveFilter: this.unresponsiveFilter
+            hasJira: this.hasJiraFilter, statusFilter: this.statusFilter, unresponsiveFilter: this.unresponsiveFilter,
+            regionNames: this.selectedRegionNames
         })
         .then(data => {
             if (requestId !== this.lastRequestId) return;
@@ -682,7 +724,8 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
                 searchTerm: this.searchTerm, priorityFilter: this.priorityFilter, onlyMine: this.currentOnlyMine,
                 sortField: this.sortedBy.replaceAll(DOT_SEP, '.'), sortOrder: this.sortedDirection,
                 advancedField: this.advancedField, advancedValue: this.advancedValue, hasJira: this.hasJiraFilter,
-                statusFilter: this.statusFilter, unresponsiveFilter: this.unresponsiveFilter
+                statusFilter: this.statusFilter, unresponsiveFilter: this.unresponsiveFilter,
+                regionNames: this.selectedRegionNames
             });
             const flattened = this.flattenData(data);
             

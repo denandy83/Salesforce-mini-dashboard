@@ -38,6 +38,9 @@
             <property name="pollingFrequency" type="Integer" label="Polling Frequency (seconds)" default="60" />
             <property name="thresholdColor" type="String" label="Alert Color (Hex)" default="#ff0000" />
             <property name="normalColor" type="String" label="Normal Color (Hex)" default="#000000" />
+            <property name="beFilterNames" type="String" label="Region: BE Names (CSV)" default="" />
+            <property name="usFilterNames" type="String" label="Region: US Names (CSV)" default="" />
+            <property name="sgFilterNames" type="String" label="Region: SG Names (CSV)" default="" />
         </targetConfig>
         <targetConfig targets="lightning__AppPage,lightning__HomePage,lightning__UtilityBar">
             <property name="newThreshold" type="Integer" label="[All Row] New Threshold" default="5" />
@@ -62,6 +65,9 @@
             <property name="pollingFrequency" type="Integer" label="Polling Frequency (seconds)" default="60" />
             <property name="thresholdColor" type="String" label="Alert Color (Hex)" default="#ff0000" />
             <property name="normalColor" type="String" label="Normal Color (Hex)" default="#000000" />
+            <property name="beFilterNames" type="String" label="Region: BE Names (CSV)" default="" />
+            <property name="usFilterNames" type="String" label="Region: US Names (CSV)" default="" />
+            <property name="sgFilterNames" type="String" label="Region: SG Names (CSV)" default="" />
         </targetConfig>
     </targetConfigs>
 </LightningComponentBundle>
