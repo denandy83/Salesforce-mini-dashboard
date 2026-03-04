@@ -489,7 +489,7 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
                         const jiraData = c['Jira_Tickets__r'];
                         const tickets = Array.isArray(jiraData) ? jiraData : (jiraData ? jiraData.records : null);
                         if (tickets && tickets.length > 0) {
-                            const doneStatuses = ['Done', 'Resolved', 'Closed'];
+                            const doneStatuses = ['Done', 'Resolved', 'Closed', "Won't do"];
                             const allDone = tickets.every(t => doneStatuses.includes(t.AVB_Status__c));
                             if (allDone) {
                                 isStatusWithJiraDone = true;

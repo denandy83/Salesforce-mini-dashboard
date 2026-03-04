@@ -33,6 +33,7 @@ The project includes advanced features like threshold alerts, real-time polling,
 
 ### Key Commands
 - **Apex Tests:** `sf apex run test -n MiniDashboardControllerTest -r human`
+- **PROD Deployment:** `sf project deploy start -o PROD --test-level RunSpecifiedTests --tests MiniDashboardControllerTest`
 
 ## Development Conventions
 - **Naming:** Follow standard Salesforce camelCase for JS/Apex variables and PascalCase for Apex classes.
