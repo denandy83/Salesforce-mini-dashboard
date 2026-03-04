@@ -494,8 +494,8 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
                             if (allDone) {
                                 isStatusWithJiraDone = true;
                                 // Add a hidden prefix to influence sort order:
-                                // '!' sorts to top in ASC, '~' sorts to top in DESC.
-                                const sortPrefix = this.sortedDirection === 'asc' ? '!' : '~';
+                                // '!' (ASCII 33) is always smaller than letters.
+                                const sortPrefix = '!';
                                 displayValue = sortPrefix + recordValue;
                             }
                         }
@@ -512,7 +512,7 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
                         key: col.fieldName, 
                         value: displayValue, 
                         cleanValue: isStatusWithJiraDone ? recordValue : displayValue,
-                        sortPrefix: isStatusWithJiraDone ? (this.sortedDirection === 'asc' ? '!' : '~') : '',
+                        sortPrefix: isStatusWithJiraDone ? '!' : '',
                         isUrl: col.type === 'button', 
                         isJira: isJira,
                         isStatusWithJiraDone: isStatusWithJiraDone,
@@ -537,13 +537,27 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
                 combinedData.sort((a, b) => {
                     const cellA = a.cells.find(cell => cell.key === 'Status');
                     const cellB = b.cells.find(cell => cell.key === 'Status');
-                    const valA = cellA ? cellA.value : '';
-                    const valB = cellB ? cellB.value : '';
                     
-                    if (this.sortedDirection === 'asc') {
-                        return valA < valB ? -1 : (valA > valB ? 1 : 0);
+                    const statusA = cellA ? cellA.cleanValue : '';
+                    const statusB = cellB ? cellB.cleanValue : '';
+                    const isDoneA = cellA ? cellA.isStatusWithJiraDone : false;
+                    const isDoneB = cellB ? cellB.isStatusWithJiraDone : false;
+                    
+                    if (statusA !== statusB) {
+                        if (this.sortedDirection === 'asc') {
+                            return statusA < statusB ? -1 : 1;
+                        }
+                        return statusA > statusB ? -1 : 1;
                     }
-                    return valA > valB ? -1 : (valA < valB ? 1 : 0);
+                    
+                    // Same status: Group Jira Done items based on direction
+                    if (isDoneA !== isDoneB) {
+                        if (this.sortedDirection === 'asc') {
+                            return isDoneA ? -1 : 1; // Done first
+                        }
+                        return isDoneA ? 1 : -1; // Done last
+                    }
+                    return 0;
                 });
             }
 
