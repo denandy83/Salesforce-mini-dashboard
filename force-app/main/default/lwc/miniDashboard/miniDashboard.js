@@ -484,19 +484,39 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
                     let displayValue = recordValue;
                     const isJira = !!col.isJira;
                     let isStatusWithJiraDone = false;
+                    let hasJiraTickets = false;
+                    let jiraStatusSymbols = '';
+                    let jiraIconClass = '';
+                    let jiraSortWeight = 1; // 1: No Jira, 2: Partial, 3: All Done
+                    let jiraCount = 0;
 
                     if (col.fieldName === 'Status') {
                         const jiraData = c['Jira_Tickets__r'];
                         const tickets = Array.isArray(jiraData) ? jiraData : (jiraData ? jiraData.records : null);
                         if (tickets && tickets.length > 0) {
+                            hasJiraTickets = true;
+                            jiraCount = tickets.length;
                             const doneStatuses = ['Done', 'Resolved', 'Closed', "Won't do"];
-                            const allDone = tickets.every(t => doneStatuses.includes(t.AVB_Status__c));
+                            
+                            let vCount = 0;
+                            let xCount = 0;
+                            tickets.forEach(t => {
+                                if (doneStatuses.includes(t.AVB_Status__c)) vCount++;
+                                else xCount++;
+                            });
+                            
+                            const allDone = xCount === 0;
                             if (allDone) {
                                 isStatusWithJiraDone = true;
-                                // Add a hidden prefix to influence sort order:
-                                // '!' (ASCII 33) is always smaller than letters.
-                                const sortPrefix = '!';
-                                displayValue = sortPrefix + recordValue;
+                                jiraStatusSymbols = '✓';
+                                jiraIconClass = 'jira-icon-green-large';
+                                jiraSortWeight = 3;
+                                // Hidden prefix for database sort fallback
+                                displayValue = '!' + recordValue;
+                            } else {
+                                jiraStatusSymbols = '✓'.repeat(vCount) + '×'.repeat(xCount);
+                                jiraIconClass = 'jira-icon-black';
+                                jiraSortWeight = 2;
                             }
                         }
                     }
@@ -516,6 +536,11 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
                         isUrl: col.type === 'button', 
                         isJira: isJira,
                         isStatusWithJiraDone: isStatusWithJiraDone,
+                        hasJiraTickets: hasJiraTickets,
+                        jiraStatusSymbols: jiraStatusSymbols,
+                        jiraIconClass: jiraIconClass,
+                        jiraSortWeight: jiraSortWeight,
+                        jiraCount: jiraCount,
                         isBoolean: col.type === 'boolean',
                         checkboxClass: col.type === 'boolean' ? (recordValue ? 'custom-checkbox checked' : 'custom-checkbox') : ''
                     };
@@ -540,8 +565,6 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
                     
                     const statusA = cellA ? cellA.cleanValue : '';
                     const statusB = cellB ? cellB.cleanValue : '';
-                    const isDoneA = cellA ? cellA.isStatusWithJiraDone : false;
-                    const isDoneB = cellB ? cellB.isStatusWithJiraDone : false;
                     
                     if (statusA !== statusB) {
                         if (this.sortedDirection === 'asc') {
@@ -550,12 +573,23 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
                         return statusA > statusB ? -1 : 1;
                     }
                     
-                    // Same status: Group Jira Done items based on direction
-                    if (isDoneA !== isDoneB) {
-                        if (this.sortedDirection === 'asc') {
-                            return isDoneA ? -1 : 1; // Done first
-                        }
-                        return isDoneA ? 1 : -1; // Done last
+                    // Same status: Sort by Jira Logic
+                    // Weights: 3 (Done) > 2 (Partial) > 1 (None)
+                    const weightA = cellA ? cellA.jiraSortWeight : 1;
+                    const weightB = cellB ? cellB.jiraSortWeight : 1;
+                    const countA = cellA ? cellA.jiraCount : 0;
+                    const countB = cellB ? cellB.jiraCount : 0;
+
+                    if (this.sortedDirection === 'asc') {
+                        // ASC: Done (3) -> Partial (2) -> None (1)
+                        if (weightA !== weightB) return weightB - weightA;
+                        // Within Partial: Higher count first
+                        if (weightA === 2) return countB - countA;
+                    } else {
+                        // DESC: Inverse of ASC -> None (1) -> Partial (2) -> Done (3)
+                        if (weightA !== weightB) return weightA - weightB;
+                        // Within Partial: Lower count first
+                        if (weightA === 2) return countA - countB;
                     }
                     return 0;
                 });

@@ -160,14 +160,14 @@
                                                          title={cell.value}></div>
                                                 </div>
                                             </template>
-                                            <template lwc:elseif={cell.isStatusWithJiraDone}>
+                                            <template lwc:elseif={cell.hasJiraTickets}>
                                                 <div class="slds-grid slds-grid_vertical-align-center">
                                                     <span>
                                                         <span class="slds-assistive-text">{cell.sortPrefix}</span>
                                                         {cell.cleanValue}
                                                     </span>
                                                     <img src={jiraLogoUrl} class="jira-status-icon slds-m-horizontal_xx-small" alt="Jira Logo" />
-                                                    <span>✓</span>
+                                                    <span class={cell.jiraIconClass}>{cell.jiraStatusSymbols}</span>
                                                 </div>
                                             </template>
                                             <template lwc:else>{cell.value}</template>

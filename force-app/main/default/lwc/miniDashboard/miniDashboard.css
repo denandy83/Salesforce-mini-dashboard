@@ -187,6 +187,18 @@ td {
     flex-shrink: 0;
 }
 
+.jira-icon-green-large {
+    color: #2e7d32;
+    font-size: 1.2rem;
+    font-weight: bold;
+    line-height: 1;
+}
+
+.jira-icon-black {
+    color: #000000;
+    line-height: 1;
+}
+
 /* Custom Checkbox for Table */
 .custom-checkbox {
     width: 14px;
