@@ -494,9 +494,8 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
                             if (allDone) {
                                 isStatusWithJiraDone = true;
                                 // Add a hidden prefix to influence sort order:
-                                // '!' sorts to top in ASC, '~' sorts to bottom in DESC.
-                                // We use the current sort direction to ensure they stay grouped together.
-                                const sortPrefix = this.sortedDirection === 'asc' ? '!' : 'z';
+                                // '!' sorts to top in ASC, '~' sorts to top in DESC.
+                                const sortPrefix = this.sortedDirection === 'asc' ? '!' : '~';
                                 displayValue = sortPrefix + recordValue;
                             }
                         }
@@ -513,7 +512,7 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
                         key: col.fieldName, 
                         value: displayValue, 
                         cleanValue: isStatusWithJiraDone ? recordValue : displayValue,
-                        sortPrefix: isStatusWithJiraDone ? (this.sortedDirection === 'asc' ? '!' : 'z') : '',
+                        sortPrefix: isStatusWithJiraDone ? (this.sortedDirection === 'asc' ? '!' : '~') : '',
                         isUrl: col.type === 'button', 
                         isJira: isJira,
                         isStatusWithJiraDone: isStatusWithJiraDone,
@@ -530,7 +529,25 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
                     jiraKey: c.Id + '-jira'
                 };
             });
-            this.modalData = currentOffset === 0 ? flattened : [...this.modalData, ...flattened];
+            
+            const combinedData = currentOffset === 0 ? flattened : [...this.modalData, ...flattened];
+            
+            // Apply client-side sorting for Status to handle the Jira Done indicators
+            if (this.sortedBy === 'Status') {
+                combinedData.sort((a, b) => {
+                    const cellA = a.cells.find(cell => cell.key === 'Status');
+                    const cellB = b.cells.find(cell => cell.key === 'Status');
+                    const valA = cellA ? cellA.value : '';
+                    const valB = cellB ? cellB.value : '';
+                    
+                    if (this.sortedDirection === 'asc') {
+                        return valA < valB ? -1 : (valA > valB ? 1 : 0);
+                    }
+                    return valA > valB ? -1 : (valA < valB ? 1 : 0);
+                });
+            }
+
+            this.modalData = combinedData;
             this.isMoreDataAvailable = data.length === this.limit;
         })
         .catch(error => {

@@ -40,7 +40,9 @@ The project includes advanced features like threshold alerts, real-time polling,
 - **Formatting:** Adhere to the `.prettierrc` configuration. Never just change code comments for the sake of it.
 - **Testing:** New features should include corresponding Jest tests for LWC and Apex tests for any controller changes.
 - **Safety:** Always use `with sharing` in Apex controllers and `AccessLevel.USER_MODE` in SOQL queries to respect FLS and Sharing Rules.
-- **Environments:** UAT is the salesforce org used for testing, PROD is the org used for production. GIT is used for versioning. Always deploy to UAT first, always ask for confirmation before deploying to PROD or GIT.
+- **Environments:** UAT is the salesforce org used for testing, PROD is the org used for production. GIT is used for versioning.
+  - **Mandatory Safety Rule:** Always deploy to UAT first.
+  - **Explicit Confirmation:** NEVER deploy to PROD or stage/commit to GIT without a dedicated, standalone confirmation turn. Even if an initial request asks to "send to prod," I must complete the implementation and UAT deployment first, then stop and ask for explicit permission to proceed to PROD/GIT.
 - **Testing:** Before changing any code when adding new features, test them with APEX scripts against UAT to verify logic
 - **Debugging:** When asked to check for bugs, always check for bugs and list them. No code changes until explicitely asked to fix the bugs. 
 
