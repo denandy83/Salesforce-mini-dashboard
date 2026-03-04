@@ -180,6 +180,13 @@ td {
     background-color: #ffffff;
 }
 
+.jira-status-icon {
+    width: 14px;
+    height: 14px;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
 /* Custom Checkbox for Table */
 .custom-checkbox {
     width: 14px;

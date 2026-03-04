@@ -7,6 +7,7 @@ import CASE_OBJECT from '@salesforce/schema/Case';
 import CASE_ACCOUNT_ID from '@salesforce/schema/Case.AccountId';
 import CONTACT_ACCOUNT_ID from '@salesforce/schema/Contact.AccountId';
 import { EnclosingTabId, openTab, onTabFocused } from 'lightning/platformWorkspaceApi';
+import JIRA_LOGO from '@salesforce/resourceUrl/jiralogo';
 import getDashboardData from '@salesforce/apex/MiniDashboardController.getDashboardData';
 import getCaseList from '@salesforce/apex/MiniDashboardController.getCaseList';
 
@@ -96,6 +97,7 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
     @track unresponsiveFilter = [];
     @track regionFilter = [];
     
+    jiraLogoUrl = JIRA_LOGO;
     isLoadingModal = false;
     isLoadingMore = false;
     isSearching = false;
@@ -481,6 +483,20 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
                     const recordValue = c[col.fieldName];
                     let displayValue = recordValue;
                     const isJira = !!col.isJira;
+                    let isStatusWithJiraDone = false;
+
+                    if (col.fieldName === 'Status') {
+                        const jiraData = c['Jira_Tickets__r'];
+                        const tickets = Array.isArray(jiraData) ? jiraData : (jiraData ? jiraData.records : null);
+                        if (tickets && tickets.length > 0) {
+                            const doneStatuses = ['Done', 'Resolved', 'Closed'];
+                            const allDone = tickets.every(t => doneStatuses.includes(t.AVB_Status__c));
+                            if (allDone) {
+                                isStatusWithJiraDone = true;
+                            }
+                        }
+                    }
+
                     if (isJira) {
                         const jiraData = c['Jira_Tickets__r'];
                         const tickets = Array.isArray(jiraData) ? jiraData : (jiraData ? jiraData.records : null);
@@ -493,6 +509,7 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
                         value: displayValue, 
                         isUrl: col.type === 'button', 
                         isJira: isJira,
+                        isStatusWithJiraDone: isStatusWithJiraDone,
                         isBoolean: col.type === 'boolean',
                         checkboxClass: col.type === 'boolean' ? (recordValue ? 'custom-checkbox checked' : 'custom-checkbox') : ''
                     };
