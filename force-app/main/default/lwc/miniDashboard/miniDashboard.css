@@ -53,7 +53,7 @@
 
 /* The Color Bar on top from pics/1.png */
 th {
-    position: sticky;
+    position: sticky !important;
     top: 0;
     z-index: 100; 
     background-color: #f8f9fb !important;
@@ -61,6 +61,29 @@ th {
     color: #514f6d;
     padding: 0.5rem !important;
     cursor: pointer;
+}
+
+/* Create a positioning context for the resizer inside the sticky th */
+th > .slds-grid {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+.column-resizer {
+    position: absolute;
+    top: 0;
+    right: -0.5rem; /* Offset the th padding */
+    width: 8px;
+    height: 100%;
+    min-height: 30px; /* Ensure it has a clickable height even if empty */
+    cursor: col-resize;
+    z-index: 1000;
+}
+
+.column-resizer:hover, .column-resizer:active {
+    background-color: #0070d2;
+    border-right: 2px solid #0070d2;
 }
 
 th.is-sorted {

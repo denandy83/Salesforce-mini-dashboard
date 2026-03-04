@@ -105,6 +105,13 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
     offset = 0;
     limit = 50;
 
+    // Resizing properties
+    _resizing = false;
+    _justResized = false;
+    _startX;
+    _startWidth;
+    _fieldId;
+
     @wire(EnclosingTabId) enclosingTabId;
     @wire(getObjectInfo, { objectApiName: CASE_OBJECT }) caseInfo;
 
@@ -309,6 +316,7 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
             this.statusFilter = [];
             this.unresponsiveFilter = [];
             this.regionFilter = [];
+            this.columns = []; // Reset manual column resizes
         }
 
         this.modalData = []; this.offset = 0; this.isModalOpen = true; this.isFirstModalLoad = true;
@@ -330,6 +338,7 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
 
     buildColumns() {
         let fieldList = this.columnFields.split(',').map(f => f.trim());
+        const existingColsMap = new Map(this.columns.map(c => [c.fieldName, c.style]));
         const cols = [];
 
         // Conditionally handle AVB_Warn_Unresponsive_Customer__c
@@ -350,17 +359,20 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
         const isCaseNumberSorted = this.sortedBy === 'CaseNumber';
         
         // 1. Case Number
+        const caseNumberFieldName = 'CaseNumber';
         cols.push({
-            label: 'Case Number', fieldName: 'CaseNumber', type: 'button', style: 'width: 100px; min-width: 100px; max-width: 100px;', 
+            label: 'Case Number', fieldName: caseNumberFieldName, type: 'button', 
+            style: existingColsMap.get(caseNumberFieldName) || 'width: 100px; min-width: 100px; max-width: 100px;', 
             isSortable: true, showSortIcon: isCaseNumberSorted, headerClass: isCaseNumberSorted ? 'is-sorted' : 'is-sortable'
         });
 
         // 2. Status (Automatic for 'ALL')
         if (this.currentDashboardId === 'ALL') {
             const isStatusSorted = this.sortedBy === 'Status';
+            const statusFieldName = 'Status';
             cols.push({
-                label: 'Status', fieldName: 'Status', type: 'text', isSortable: true,
-                style: 'width: 150px; min-width: 150px; max-width: 150px;',
+                label: 'Status', fieldName: statusFieldName, type: 'text', isSortable: true,
+                style: existingColsMap.get(statusFieldName) || 'width: 150px; min-width: 150px; max-width: 150px;',
                 showSortIcon: isStatusSorted, headerClass: isStatusSorted ? 'is-sorted' : 'is-sortable'
             });
             fieldList = fieldList.filter(f => f.split(':')[0].trim().toLowerCase() !== 'status');
@@ -395,7 +407,9 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
             const isSorted = fieldName === this.sortedBy;
             let headerClass = isSorted ? 'is-sorted' : (isJira ? '' : 'is-sortable');
 
-            const style = width ? `width: ${width}px; min-width: ${width}px;` : '';
+            const initialStyle = width ? `width: ${width}px; min-width: ${width}px;` : '';
+            const style = existingColsMap.get(fieldName) || initialStyle;
+
             cols.push({
                 label: label, 
                 fieldName: fieldName, 
@@ -622,6 +636,12 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
     }
 
     handleSort(event) {
+        if (this._justResized) {
+            this._justResized = false;
+            return;
+        }
+        if (this._resizing) return;
+
         const field = event.currentTarget.dataset.id;
         const col = this.columns.find(c => c.fieldName === field);
         if (col && col.isSortable === false) return;
@@ -631,6 +651,64 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
         this.modalData = [];
         this.buildColumns(); 
         this.loadModalData();
+    }
+
+    handleResizeMouseDown(event) {
+        event.preventDefault(); // Prevent text selection
+        event.stopPropagation();
+        this._resizing = true;
+        this._justResized = false;
+        this._fieldId = event.target.dataset.id;
+        this._startX = event.pageX;
+
+        // Lock all columns to their current rendered width to prevent layout shifts
+        const ths = this.template.querySelectorAll('th');
+        const renderedWidths = {};
+        ths.forEach(th => {
+            if (th.dataset.id) {
+                renderedWidths[th.dataset.id] = th.offsetWidth;
+            }
+        });
+
+        this.columns = this.columns.map(col => {
+            const currentWidth = renderedWidths[col.fieldName] || 100;
+            return {
+                ...col,
+                style: `width: ${currentWidth}px; min-width: ${currentWidth}px; max-width: ${currentWidth}px;`
+            };
+        });
+
+        this._startWidth = renderedWidths[this._fieldId];
+
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+
+        this._mouseMoveHandler = this.handleResizeMouseMove.bind(this);
+        this._mouseUpHandler = this.handleResizeMouseUp.bind(this);
+
+        window.addEventListener('mousemove', this._mouseMoveHandler);
+        window.addEventListener('mouseup', this._mouseUpHandler);
+    }
+
+    handleResizeMouseMove(event) {
+        if (!this._resizing) return;
+        this._justResized = true;
+        const deltaX = event.pageX - this._startX;
+        const newWidth = Math.max(50, this._startWidth + deltaX);
+
+        this.columns = this.columns.map(col => {
+            if (col.fieldName === this._fieldId) {
+                return { ...col, style: `width: ${newWidth}px; min-width: ${newWidth}px; max-width: ${newWidth}px;` };
+            }
+            return col;
+        });
+    }
+    handleResizeMouseUp() {
+        this._resizing = false;
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+        window.removeEventListener('mousemove', this._mouseMoveHandler);
+        window.removeEventListener('mouseup', this._mouseUpHandler);
     }
 
     handleSearch(event) {

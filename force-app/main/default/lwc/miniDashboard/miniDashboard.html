@@ -128,7 +128,7 @@
                             <lightning-spinner alternative-text="Searching..." size="small"></lightning-spinner>
                         </div>
                     </template>
-                    <table class="slds-table slds-table_bordered slds-table_fixed-layout">
+                    <table class="slds-table slds-table_bordered slds-table_fixed-layout" style="min-width: fit-content;">
                         <thead>
                             <tr class="slds-line-height_reset">
                                 <template for:each={columns} for:item="col">
@@ -138,6 +138,7 @@
                                             <template lwc:if={col.showSortIcon}>
                                                 <lightning-icon icon-name={sortIcon} size="xx-small" class="slds-m-left_xx-small slds-shrink-none"></lightning-icon>
                                             </template>
+                                            <div class="column-resizer" onmousedown={handleResizeMouseDown} data-id={col.fieldName}></div>
                                         </div>
                                     </th>
                                 </template>
