@@ -493,6 +493,11 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
                             const allDone = tickets.every(t => doneStatuses.includes(t.AVB_Status__c));
                             if (allDone) {
                                 isStatusWithJiraDone = true;
+                                // Add a hidden prefix to influence sort order:
+                                // '!' sorts to top in ASC, '~' sorts to bottom in DESC.
+                                // We use the current sort direction to ensure they stay grouped together.
+                                const sortPrefix = this.sortedDirection === 'asc' ? '!' : 'z';
+                                displayValue = sortPrefix + recordValue;
                             }
                         }
                     }
@@ -507,6 +512,8 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
                     return { 
                         key: col.fieldName, 
                         value: displayValue, 
+                        cleanValue: isStatusWithJiraDone ? recordValue : displayValue,
+                        sortPrefix: isStatusWithJiraDone ? (this.sortedDirection === 'asc' ? '!' : 'z') : '',
                         isUrl: col.type === 'button', 
                         isJira: isJira,
                         isStatusWithJiraDone: isStatusWithJiraDone,
