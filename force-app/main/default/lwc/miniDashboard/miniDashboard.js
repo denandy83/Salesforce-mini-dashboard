@@ -29,6 +29,7 @@ const SEARCH_SHORTCUTS = {
 };
 
 const JIRA_EXTRA_FIELDS = [
+    { apiName: 'AVB_Summary__c', label: 'Jira Summary' },
     { apiName: 'AVB_Status__c', label: 'Jira Status' },
     { apiName: 'AVB_Priority__c', label: 'Jira Priority' },
     { apiName: 'AVB_Fix_Versions__c', label: 'Jira Fix Version' },
@@ -480,6 +481,7 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
                             id: j.Id,
                             name: j.Name,
                             url: `https://aviobook.atlassian.net/browse/${j.Name}`,
+                            summary: j.AVB_Summary__c || '-',
                             status: j.AVB_Status__c || '-',
                             priority: j.AVB_Priority__c || '-',
                             fixVersion: j.AVB_Fix_Versions__c || '-',
