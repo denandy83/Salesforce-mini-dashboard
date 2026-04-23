@@ -97,6 +97,7 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
     @track statusFilter = [];
     @track unresponsiveFilter = [];
     @track regionFilter = [];
+    @track jiraKeyTypeFilter = [];
     
     jiraLogoUrl = JIRA_LOGO;
     isLoadingModal = false;
@@ -146,6 +147,12 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
     get regionBEVariant() { return this.regionFilter.includes('BE') ? 'brand' : 'neutral'; }
     get regionUSVariant() { return this.regionFilter.includes('US') ? 'brand' : 'neutral'; }
     get regionSGVariant() { return this.regionFilter.includes('SG') ? 'brand' : 'neutral'; }
+
+    get showJiraKeyTypeFilter() { return this.hasJiraFilter; }
+    get jiraKeyIntVariant() { return this.jiraKeyTypeFilter.includes('INT') ? 'brand' : 'neutral'; }
+    get jiraKeyAoVariant() { return this.jiraKeyTypeFilter.includes('AO') ? 'brand' : 'neutral'; }
+    get jiraKeyProdVariant() { return this.jiraKeyTypeFilter.includes('PROD') ? 'brand' : 'neutral'; }
+    get jiraKeyOtherVariant() { return this.jiraKeyTypeFilter.includes('OTHER') ? 'brand' : 'neutral'; }
 
     get selectedRegionNames() {
         let names = [];
@@ -255,7 +262,7 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
     }
 
     fetchData() {
-        return getDashboardData({ accountId: this.accountId })
+        return getDashboardData({ accountId: this.accountId, jiraKeyTypes: this.jiraKeyTypeFilter })
             .then(result => {
                 this.totalItems = this.processItems(this.totalItems, result.totals, '');
                 this.myItems = this.processItems(this.myItems, result.myTickets, 'my');
@@ -317,6 +324,7 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
             this.statusFilter = [];
             this.unresponsiveFilter = [];
             this.regionFilter = [];
+            this.jiraKeyTypeFilter = [];
             this.columns = []; // Reset manual column resizes
         }
 
@@ -459,7 +467,7 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
             priorityFilter: this.priorityFilter, limitCount: this.limit,
             advancedField: this.advancedField, advancedValue: this.advancedValue,
             hasJira: this.hasJiraFilter, statusFilter: this.statusFilter, unresponsiveFilter: this.unresponsiveFilter,
-            regionNames: this.selectedRegionNames
+            regionNames: this.selectedRegionNames, jiraKeyTypes: this.jiraKeyTypeFilter
         })
         .then(data => {
             if (requestId !== this.lastRequestId) return;
@@ -767,7 +775,27 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
         this.loadModalData(); 
     }
     
-    handleHasJiraToggle() { this.hasJiraFilter = !this.hasJiraFilter; this.offset = 0; this.loadModalData(); }
+    handleHasJiraToggle() {
+        this.hasJiraFilter = !this.hasJiraFilter;
+        if (!this.hasJiraFilter) this.jiraKeyTypeFilter = [];
+        this.offset = 0;
+        this.fetchData();
+        this.loadModalData();
+    }
+
+    handleJiraKeyTypeToggle(event) {
+        const val = event.target.value;
+        let newFilter = [...this.jiraKeyTypeFilter];
+        if (newFilter.includes(val)) {
+            newFilter = newFilter.filter(v => v !== val);
+        } else {
+            newFilter.push(val);
+        }
+        this.jiraKeyTypeFilter = newFilter;
+        this.offset = 0;
+        this.fetchData();
+        this.loadModalData();
+    }
 
     handleRefreshClick() {
         this.fetchData();
@@ -908,7 +936,7 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
                 sortField: this.sortedBy.replaceAll(DOT_SEP, '.'), sortOrder: this.sortedDirection,
                 advancedField: this.advancedField, advancedValue: this.advancedValue, hasJira: this.hasJiraFilter,
                 statusFilter: this.statusFilter, unresponsiveFilter: this.unresponsiveFilter,
-                regionNames: this.selectedRegionNames
+                regionNames: this.selectedRegionNames, jiraKeyTypes: this.jiraKeyTypeFilter
             });
             const flattened = this.flattenData(data);
             

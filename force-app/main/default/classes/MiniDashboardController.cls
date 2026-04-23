@@ -24,15 +24,33 @@ public with sharing class MiniDashboardController {
     };
 
     @AuraEnabled
-    public static DashboardData getDashboardData(Id accountId) {
+    public static DashboardData getDashboardData(Id accountId, List<String> jiraKeyTypes) {
         DashboardData data = new DashboardData();
-        data.totals = getSummaries(null, false);
-        data.myTickets = getSummaries(null, true);
-        data.accountSpecific = (accountId != null) ? getSummaries(accountId, false) : null;
+        data.totals = getSummaries(null, false, jiraKeyTypes);
+        data.myTickets = getSummaries(null, true, jiraKeyTypes);
+        data.accountSpecific = (accountId != null) ? getSummaries(accountId, false, jiraKeyTypes) : null;
         return data;
     }
 
-    private static Map<String, StatusSummary> getSummaries(Id accountId, Boolean onlyMine) {
+    private static String buildJiraKeyTypeClause(List<String> jiraKeyTypes) {
+        if (jiraKeyTypes == null || jiraKeyTypes.isEmpty()) return '';
+        List<String> orParts = new List<String>();
+        Boolean hasOther = false;
+        for (String t : jiraKeyTypes) {
+            String upper = (t == null) ? '' : t.toUpperCase();
+            if (upper == 'INT') orParts.add('Name LIKE \'AVIOINT-%\'');
+            else if (upper == 'AO') orParts.add('Name LIKE \'AO-%\'');
+            else if (upper == 'PROD') orParts.add('Name LIKE \'AVIO-%\'');
+            else if (upper == 'OTHER') hasOther = true;
+        }
+        if (hasOther) {
+            orParts.add('(NOT (Name LIKE \'AVIOINT-%\' OR Name LIKE \'AVIO-%\' OR Name LIKE \'AO-%\'))');
+        }
+        if (orParts.isEmpty()) return '';
+        return ' AND Id IN (SELECT AVB_Case__c FROM AVB_Jira_Ticket__c WHERE ' + String.join(orParts, ' OR ') + ')';
+    }
+
+    private static Map<String, StatusSummary> getSummaries(Id accountId, Boolean onlyMine, List<String> jiraKeyTypes) {
         Map<String, StatusSummary> results = new Map<String, StatusSummary>{
             'New' => new StatusSummary(), 
             'Open' => new StatusSummary(), 
@@ -49,6 +67,8 @@ public with sharing class MiniDashboardController {
             Id currentUserId = UserInfo.getUserId();
             query += ' AND OwnerId = :currentUserId';
         }
+
+        query += buildJiraKeyTypeClause(jiraKeyTypes);
 
         query += ' GROUP BY Status, Priority';
 
@@ -79,7 +99,7 @@ public with sharing class MiniDashboardController {
     }
 
     @AuraEnabled
-    public static List<Case> getCaseList(String dashboardId, Id accountId, List<String> fields, String sortField, String sortOrder, String searchTerm, Integer offset, String advancedField, String advancedValue, Boolean onlyMine, Integer limitCount, List<String> priorityFilter, Boolean hasJira, List<String> statusFilter, List<String> unresponsiveFilter, List<String> regionNames) {
+    public static List<Case> getCaseList(String dashboardId, Id accountId, List<String> fields, String sortField, String sortOrder, String searchTerm, Integer offset, String advancedField, String advancedValue, Boolean onlyMine, Integer limitCount, List<String> priorityFilter, Boolean hasJira, List<String> statusFilter, List<String> unresponsiveFilter, List<String> regionNames, List<String> jiraKeyTypes) {
         List<String> statuses = (statusFilter != null && !statusFilter.isEmpty()) ? statusFilter : statusMap.get(dashboardId);
         if (statuses == null) return new List<Case>();
 
@@ -134,6 +154,8 @@ public with sharing class MiniDashboardController {
         if (hasJira == true) {
             query += ' AND Id IN (SELECT AVB_Case__c FROM AVB_Jira_Ticket__c)';
         }
+
+        query += buildJiraKeyTypeClause(jiraKeyTypes);
 
         if (String.isNotBlank(advancedField) && String.isNotBlank(advancedValue)) {
             String sanitizedField = advancedField.replaceAll('[^a-zA-Z0-9._]', '');

@@ -119,6 +119,19 @@
                                     </div>
                                 </template>
 
+                                <!-- Jira Key Type Filter -->
+                                <template lwc:if={showJiraKeyTypeFilter}>
+                                    <div class="filter-group slds-m-left_small">
+                                        <div class="filter-title slds-text-title_bold slds-m-bottom_xx-small">Jira Type</div>
+                                        <lightning-button-group>
+                                            <lightning-button label="INT" value="INT" variant={jiraKeyIntVariant} onclick={handleJiraKeyTypeToggle}></lightning-button>
+                                            <lightning-button label="AO" value="AO" variant={jiraKeyAoVariant} onclick={handleJiraKeyTypeToggle}></lightning-button>
+                                            <lightning-button label="PROD" value="PROD" variant={jiraKeyProdVariant} onclick={handleJiraKeyTypeToggle}></lightning-button>
+                                            <lightning-button label="Other" value="OTHER" variant={jiraKeyOtherVariant} onclick={handleJiraKeyTypeToggle}></lightning-button>
+                                        </lightning-button-group>
+                                    </div>
+                                </template>
+
                                 <!-- Refresh -->
                                 <div class="filter-group slds-m-left_small">
                                     <div class="filter-title slds-text-title_bold slds-m-bottom_xx-small">&nbsp;</div>
