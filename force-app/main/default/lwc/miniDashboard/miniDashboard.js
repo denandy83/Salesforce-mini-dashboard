@@ -477,21 +477,27 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
                     const jiraData = c['Jira_Tickets__r'];
                     const tickets = Array.isArray(jiraData) ? jiraData : (jiraData ? jiraData.records : null);
                     if (tickets) {
-                        jiraDetails = tickets.map((j, index) => ({
-                            id: j.Id,
-                            name: j.Name,
-                            url: `https://aviobook.atlassian.net/browse/${j.Name}`,
-                            summary: j.AVB_Summary__c || '-',
-                            status: j.AVB_Status__c || '-',
-                            priority: j.AVB_Priority__c || '-',
-                            fixVersion: j.AVB_Fix_Versions__c || '-',
-                            assignee: j.AVB_Assignee__c || '-',
-                            reporter: j.AVB_Reporter__c || '-',
-                            dueDate: this.formatDate(j.AVB_Due_Date__c) || '-',
-                            customers: j.AVB_Customers__c || '-',
-                            environment: j.AVB_Base_Cloud_Tools_Environment__c || '-',
-                            itemClass: index % 2 === 0 ? 'jira-item-even' : 'jira-item-odd'
-                        }));
+                        jiraDetails = tickets.map((j, index) => {
+                            const isAO = !!(j.Name && j.Name.startsWith('AO'));
+                            const envVal = j.AVB_Base_Cloud_Tools_Environment__c;
+                            return {
+                                id: j.Id,
+                                name: j.Name,
+                                url: `https://aviobook.atlassian.net/browse/${j.Name}`,
+                                summary: j.AVB_Summary__c || '-',
+                                status: j.AVB_Status__c || '-',
+                                priority: j.AVB_Priority__c || '-',
+                                fixVersion: j.AVB_Fix_Versions__c || '-',
+                                assignee: j.AVB_Assignee__c || '-',
+                                reporter: j.AVB_Reporter__c || '-',
+                                dueDate: this.formatDate(j.AVB_Due_Date__c) || '-',
+                                customers: j.AVB_Customers__c || '-',
+                                environment: envVal || '-',
+                                isAO,
+                                aoEnvLabel: envVal ? `Env: ${envVal}` : 'Env: [empty]',
+                                itemClass: index % 2 === 0 ? 'jira-item-even' : 'jira-item-odd'
+                            };
+                        });
                     }
                 }
 
@@ -762,6 +768,14 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
     }
     
     handleHasJiraToggle() { this.hasJiraFilter = !this.hasJiraFilter; this.offset = 0; this.loadModalData(); }
+
+    handleRefreshClick() {
+        this.fetchData();
+        if (this.isModalOpen) {
+            this.offset = 0;
+            this.loadModalData();
+        }
+    }
 
     handleUnresponsiveToggle(event) {
         const val = event.target.value;

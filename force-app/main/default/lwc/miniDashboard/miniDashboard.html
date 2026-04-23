@@ -118,6 +118,12 @@
                                         </lightning-button-group>
                                     </div>
                                 </template>
+
+                                <!-- Refresh -->
+                                <div class="filter-group slds-m-left_small">
+                                    <div class="filter-title slds-text-title_bold slds-m-bottom_xx-small">&nbsp;</div>
+                                    <lightning-button-icon icon-name="utility:refresh" variant="border-filled" alternative-text="Refresh" title="Refresh data" onclick={handleRefreshClick}></lightning-button-icon>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -217,6 +223,13 @@
                                                                     <span class="slds-text-color_weak">Env:</span> {jira.environment}
                                                                 </div>
                                                             </div>
+                                                            <template lwc:if={jira.isAO}>
+                                                                <div class="slds-grid slds-wrap slds-m-top_xx-small">
+                                                                    <div class="slds-col slds-size_1-of-1">
+                                                                        {jira.aoEnvLabel}
+                                                                    </div>
+                                                                </div>
+                                                            </template>
                                                         </div>
                                                     </li>
                                                 </template>
