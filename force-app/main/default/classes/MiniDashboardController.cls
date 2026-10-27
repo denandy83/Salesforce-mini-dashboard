@@ -24,11 +24,11 @@ public with sharing class MiniDashboardController {
     };
 
     @AuraEnabled
-    public static DashboardData getDashboardData(Id accountId, List<String> jiraKeyTypes) {
+    public static DashboardData getDashboardData(Id accountId, List<String> jiraKeyTypes, List<String> recordTypes) {
         DashboardData data = new DashboardData();
-        data.totals = getSummaries(null, false, jiraKeyTypes);
-        data.myTickets = getSummaries(null, true, jiraKeyTypes);
-        data.accountSpecific = (accountId != null) ? getSummaries(accountId, false, jiraKeyTypes) : null;
+        data.totals = getSummaries(null, false, jiraKeyTypes, recordTypes);
+        data.myTickets = getSummaries(null, true, jiraKeyTypes, recordTypes);
+        data.accountSpecific = (accountId != null) ? getSummaries(accountId, false, jiraKeyTypes, recordTypes) : null;
         return data;
     }
 
@@ -50,7 +50,7 @@ public with sharing class MiniDashboardController {
         return ' AND Id IN (SELECT AVB_Case__c FROM AVB_Jira_Ticket__c WHERE ' + String.join(orParts, ' OR ') + ')';
     }
 
-    private static Map<String, StatusSummary> getSummaries(Id accountId, Boolean onlyMine, List<String> jiraKeyTypes) {
+    private static Map<String, StatusSummary> getSummaries(Id accountId, Boolean onlyMine, List<String> jiraKeyTypes, List<String> recordTypes) {
         Map<String, StatusSummary> results = new Map<String, StatusSummary>{
             'New' => new StatusSummary(), 
             'Open' => new StatusSummary(), 
@@ -66,6 +66,10 @@ public with sharing class MiniDashboardController {
         if (onlyMine) {
             Id currentUserId = UserInfo.getUserId();
             query += ' AND OwnerId = :currentUserId';
+        }
+
+        if (recordTypes != null && !recordTypes.isEmpty()) {
+            query += ' AND RecordType.DeveloperName IN :recordTypes';
         }
 
         query += buildJiraKeyTypeClause(jiraKeyTypes);
@@ -99,7 +103,7 @@ public with sharing class MiniDashboardController {
     }
 
     @AuraEnabled
-    public static List<Case> getCaseList(String dashboardId, Id accountId, List<String> fields, String sortField, String sortOrder, String searchTerm, Integer offset, String advancedField, String advancedValue, Boolean onlyMine, Integer limitCount, List<String> priorityFilter, Boolean hasJira, List<String> statusFilter, List<String> unresponsiveFilter, List<String> regionNames, List<String> jiraKeyTypes) {
+    public static List<Case> getCaseList(String dashboardId, Id accountId, List<String> fields, String sortField, String sortOrder, String searchTerm, Integer offset, String advancedField, String advancedValue, Boolean onlyMine, Integer limitCount, List<String> priorityFilter, Boolean hasJira, List<String> statusFilter, List<String> unresponsiveFilter, List<String> regionNames, List<String> jiraKeyTypes, List<String> recordTypes) {
         List<String> statuses = (statusFilter != null && !statusFilter.isEmpty()) ? statusFilter : statusMap.get(dashboardId);
         if (statuses == null) return new List<Case>();
 
@@ -139,6 +143,10 @@ public with sharing class MiniDashboardController {
 
         if (regionNames != null && !regionNames.isEmpty()) {
             query += ' AND Owner.FirstName IN :regionNames';
+        }
+
+        if (recordTypes != null && !recordTypes.isEmpty()) {
+            query += ' AND RecordType.DeveloperName IN :recordTypes';
         }
 
         Boolean unresponsiveVal;

@@ -9,6 +9,14 @@
     background: #ffffff;
 }
 
+/* Record Type Selector */
+.record-type-filter {
+    display: flex;
+    justify-content: center;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #f0f0f0;
+}
+
 /* Row Layout */
 .dashboard-row {
     display: flex;

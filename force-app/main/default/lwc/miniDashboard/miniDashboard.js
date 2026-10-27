@@ -98,7 +98,8 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
     @track unresponsiveFilter = [];
     @track regionFilter = [];
     @track jiraKeyTypeFilter = [];
-    
+    @track recordTypeFilter = 'ALL';
+
     jiraLogoUrl = JIRA_LOGO;
     isLoadingModal = false;
     isLoadingMore = false;
@@ -126,6 +127,7 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
     currentOnlyMine = false;
     isFirstModalLoad = false;
     lastRequestId = 0;
+    lastDataRequestId = 0;
 
     // Advanced search properties
     searchTimeout;
@@ -153,6 +155,14 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
     get jiraKeyAoVariant() { return this.jiraKeyTypeFilter.includes('AO') ? 'brand' : 'neutral'; }
     get jiraKeyProdVariant() { return this.jiraKeyTypeFilter.includes('PROD') ? 'brand' : 'neutral'; }
     get jiraKeyOtherVariant() { return this.jiraKeyTypeFilter.includes('OTHER') ? 'brand' : 'neutral'; }
+
+    get recordTypeAllVariant() { return this.recordTypeFilter === 'ALL' ? 'brand' : 'neutral'; }
+    get recordTypeAvioDataVariant() { return this.recordTypeFilter === 'AVB_AvioData_Case' ? 'brand' : 'neutral'; }
+    get recordTypeAvioBookVariant() { return this.recordTypeFilter === 'AVB_AvioBook_Case' ? 'brand' : 'neutral'; }
+    get recordTypeProblemVariant() { return this.recordTypeFilter === 'AVB_Problem_Case' ? 'brand' : 'neutral'; }
+
+    // Dashboard-level selector (not reset when a KPI is opened); 'ALL' sends no record type to Apex.
+    get selectedRecordTypes() { return this.recordTypeFilter === 'ALL' ? [] : [this.recordTypeFilter]; }
 
     get selectedRegionNames() {
         let names = [];
@@ -262,8 +272,10 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
     }
 
     fetchData() {
-        return getDashboardData({ accountId: this.accountId, jiraKeyTypes: this.jiraKeyTypeFilter })
+        const requestId = ++this.lastDataRequestId;
+        return getDashboardData({ accountId: this.accountId, jiraKeyTypes: this.jiraKeyTypeFilter, recordTypes: this.selectedRecordTypes })
             .then(result => {
+                if (requestId !== this.lastDataRequestId) return;
                 this.totalItems = this.processItems(this.totalItems, result.totals, '');
                 this.myItems = this.processItems(this.myItems, result.myTickets, 'my');
                 if (result.accountSpecific) this.accountItems = this.processItems(this.accountItems, result.accountSpecific, 'account');
@@ -467,7 +479,8 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
             priorityFilter: this.priorityFilter, limitCount: this.limit,
             advancedField: this.advancedField, advancedValue: this.advancedValue,
             hasJira: this.hasJiraFilter, statusFilter: this.statusFilter, unresponsiveFilter: this.unresponsiveFilter,
-            regionNames: this.selectedRegionNames, jiraKeyTypes: this.jiraKeyTypeFilter
+            regionNames: this.selectedRegionNames, jiraKeyTypes: this.jiraKeyTypeFilter,
+            recordTypes: this.selectedRecordTypes
         })
         .then(data => {
             if (requestId !== this.lastRequestId) return;
@@ -797,6 +810,13 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
         this.loadModalData();
     }
 
+    handleRecordTypeSelect(event) {
+        const val = event.target.value;
+        if (val === this.recordTypeFilter) return;
+        this.recordTypeFilter = val;
+        this.fetchData();
+    }
+
     handleRefreshClick() {
         this.fetchData();
         if (this.isModalOpen) {
@@ -936,7 +956,8 @@ export default class MiniDashboard extends NavigationMixin(LightningElement) {
                 sortField: this.sortedBy.replaceAll(DOT_SEP, '.'), sortOrder: this.sortedDirection,
                 advancedField: this.advancedField, advancedValue: this.advancedValue, hasJira: this.hasJiraFilter,
                 statusFilter: this.statusFilter, unresponsiveFilter: this.unresponsiveFilter,
-                regionNames: this.selectedRegionNames, jiraKeyTypes: this.jiraKeyTypeFilter
+                regionNames: this.selectedRegionNames, jiraKeyTypes: this.jiraKeyTypeFilter,
+                recordTypes: this.selectedRecordTypes
             });
             const flattened = this.flattenData(data);
             

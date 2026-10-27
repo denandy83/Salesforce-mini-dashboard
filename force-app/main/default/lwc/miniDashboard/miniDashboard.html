@@ -1,5 +1,15 @@
 <template>
         <div class="dashboard-container slds-p-around_small">
+            <!-- Record Type Selector -->
+            <div class="record-type-filter">
+                <lightning-button-group>
+                    <lightning-button label="All" value="ALL" variant={recordTypeAllVariant} onclick={handleRecordTypeSelect}></lightning-button>
+                    <lightning-button label="AvioData" value="AVB_AvioData_Case" variant={recordTypeAvioDataVariant} onclick={handleRecordTypeSelect}></lightning-button>
+                    <lightning-button label="AvioBook" value="AVB_AvioBook_Case" variant={recordTypeAvioBookVariant} onclick={handleRecordTypeSelect}></lightning-button>
+                    <lightning-button label="Problems" value="AVB_Problem_Case" variant={recordTypeProblemVariant} onclick={handleRecordTypeSelect}></lightning-button>
+                </lightning-button-group>
+            </div>
+
             <!-- Row 1: ALL -->
             <div class="dashboard-row">
                 <div class="row-label">All</div>
